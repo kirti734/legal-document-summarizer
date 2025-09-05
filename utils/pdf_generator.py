@@ -411,46 +411,6 @@ class ColorCodedPDFGenerator:
     
     def _add_simple_highlighted_text(self, story: List, styles, original_text: str, clauses: List[Dict]):
         """Add original text with simple color highlights - no analysis sections."""
-        if not clauses:
-            # If no clause analysis, just show original text
-            story.append(Paragraph(original_text, styles['Normal']))
-            return
-        
-        # Sort clauses by start position
-        sorted_clauses = sorted(clauses, key=lambda x: x.get('start_pos', 0))
-        
-        # Create highlighted text with background colors instead of just text colors
-        highlighted_parts = []
-        last_pos = 0
-        
-        for clause in sorted_clauses:
-            start_pos = clause.get('start_pos', 0)
-            end_pos = clause.get('end_pos', 0)
-            classification = clause.get('classification', 'neutral')
-            
-            # Add text before this clause (normal text)
-            if start_pos > last_pos:
-                before_text = original_text[last_pos:start_pos]
-                if before_text.strip():
-                    highlighted_parts.append(self._escape_html(before_text))
-            
-            # Add highlighted clause with background color
-            clause_text = original_text[start_pos:end_pos] if end_pos > start_pos else clause.get('text', '')
-            if clause_text.strip():
-                bg_color = self._get_highlight_color(classification)
-                text_color = self.text_colors.get(classification, self.text_colors['neutral']).hexval()
-                highlighted_parts.append(f'<font color="{text_color}" backcolor="{bg_color}"><b>{self._escape_html(clause_text)}</b></font>')
-            
-            last_pos = max(end_pos, last_pos)
-        
-        # Add remaining text
-        if last_pos < len(original_text):
-            remaining_text = original_text[last_pos:]
-            if remaining_text.strip():
-                highlighted_parts.append(self._escape_html(remaining_text))
-        
-        # Create final highlighted text
-        highlighted_text = ''.join(highlighted_parts)
         
         # Document-like text style
         text_style = ParagraphStyle(
@@ -459,21 +419,200 @@ class ColorCodedPDFGenerator:
             fontSize=11,
             leading=16,
             alignment=TA_JUSTIFY,
-            spaceBefore=0,
+            spaceBefore=4,
             spaceAfter=4
         )
         
-        # Split text into manageable chunks
-        chunks = self._split_text_into_chunks(highlighted_text, 2000)
-        for chunk in chunks:
-            if chunk.strip():
+        if not clauses or len(clauses) == 0:
+            # If no clause analysis, add basic pattern-based highlighting
+            self._add_basic_pattern_highlights(story, text_style, original_text)
+            return
+        
+        # Sort clauses by start position for proper highlighting
+        valid_clauses = [c for c in clauses if c.get('start_pos', 0) >= 0 and c.get('end_pos', 0) > c.get('start_pos', 0)]
+        if not valid_clauses:
+            # No valid position data, fall back to pattern matching
+            self._add_basic_pattern_highlights(story, text_style, original_text)
+            return
+            
+        sorted_clauses = sorted(valid_clauses, key=lambda x: x.get('start_pos', 0))
+        
+        # Create highlighted text paragraph by paragraph to avoid ReportLab issues
+        highlighted_paragraphs = self._create_highlighted_paragraphs(original_text, sorted_clauses)
+        
+        for para_text in highlighted_paragraphs:
+            if para_text.strip():
                 try:
-                    story.append(Paragraph(chunk, text_style))
+                    # Clean and format the text
+                    clean_text = self._clean_text_for_pdf(para_text)
+                    story.append(Paragraph(clean_text, text_style))
                 except Exception as e:
-                    # Fallback to plain text if HTML parsing fails
-                    plain_chunk = chunk.replace('<font color="', '').replace('</font>', '').replace('<b>', '').replace('</b>', '')
-                    story.append(Paragraph(plain_chunk, text_style))
-                story.append(Spacer(1, 4))
+                    # If highlighting fails, add plain text
+                    plain_text = self._strip_html_tags(para_text)
+                    story.append(Paragraph(plain_text, text_style))
+                story.append(Spacer(1, 6))
+    
+    def _add_basic_pattern_highlights(self, story: List, text_style, original_text: str):
+        """Add highlighting based on common legal patterns when AI analysis fails."""
+        # Split into paragraphs
+        paragraphs = original_text.split('\n\n')
+        
+        for para in paragraphs:
+            if not para.strip():
+                continue
+                
+            # Apply basic pattern highlighting
+            highlighted_para = self._apply_pattern_highlights(para)
+            
+            try:
+                story.append(Paragraph(highlighted_para, text_style))
+            except:
+                story.append(Paragraph(para, text_style))
+            story.append(Spacer(1, 6))
+    
+    def _apply_pattern_highlights(self, text: str) -> str:
+        """Apply highlights based on legal document patterns."""
+        import re
+        
+        # Escape HTML first
+        text = self._escape_html(text)
+        
+        # Pattern-based highlighting for common legal terms
+        harmful_patterns = [
+            r'\b(penalty|penalt(y|ies))\b',
+            r'\b(forfeit|forfeiture)\b', 
+            r'\b(breach|violation)\b',
+            r'\b(terminate|termination)\b',
+            r'\b(liable|liability)\b'
+        ]
+        
+        warning_patterns = [
+            r'\b(shall|must|required)\b',
+            r'\b(obligation|duty)\b',
+            r'\b(notice|notification)\b',
+            r'\b(deadline|due date)\b'
+        ]
+        
+        good_patterns = [
+            r'\b(benefit|advantage)\b',
+            r'\b(right|entitle)\b',
+            r'\b(protection|protect)\b'
+        ]
+        
+        # Apply highlighting (case insensitive)
+        for pattern in harmful_patterns:
+            text = re.sub(pattern, f'<font color="#d32f2f" backcolor="#ffcdd2"><b>\\g<0></b></font>', 
+                         text, flags=re.IGNORECASE)
+        
+        for pattern in warning_patterns:
+            text = re.sub(pattern, f'<font color="#f57c00" backcolor="#fff3b0"><b>\\g<0></b></font>', 
+                         text, flags=re.IGNORECASE)
+        
+        for pattern in good_patterns:
+            text = re.sub(pattern, f'<font color="#388e3c" backcolor="#c8e6c9"><b>\\g<0></b></font>', 
+                         text, flags=re.IGNORECASE)
+        
+        return text
+    
+    def _create_highlighted_paragraphs(self, original_text: str, clauses: List[Dict]) -> List[str]:
+        """Create paragraphs with proper highlighting."""
+        paragraphs = []
+        
+        # Split text into natural paragraphs first
+        text_paragraphs = original_text.split('\n\n')
+        current_pos = 0
+        
+        for para in text_paragraphs:
+            if not para.strip():
+                current_pos += len(para) + 2  # +2 for \n\n
+                continue
+                
+            para_start = current_pos
+            para_end = current_pos + len(para)
+            
+            # Find clauses that overlap with this paragraph
+            para_clauses = []
+            for clause in clauses:
+                clause_start = clause.get('start_pos', 0)
+                clause_end = clause.get('end_pos', 0)
+                
+                # Check if clause overlaps with paragraph
+                if clause_start < para_end and clause_end > para_start:
+                    # Adjust positions relative to paragraph start
+                    rel_start = max(0, clause_start - para_start)
+                    rel_end = min(len(para), clause_end - para_start)
+                    
+                    if rel_end > rel_start:
+                        para_clauses.append({
+                            'start_pos': rel_start,
+                            'end_pos': rel_end,
+                            'classification': clause.get('classification', 'neutral')
+                        })
+            
+            # Apply highlighting to this paragraph
+            if para_clauses:
+                highlighted_para = self._highlight_paragraph(para, para_clauses)
+            else:
+                highlighted_para = self._escape_html(para)
+                
+            paragraphs.append(highlighted_para)
+            current_pos = para_end + 2  # +2 for \n\n
+        
+        return paragraphs
+    
+    def _highlight_paragraph(self, para_text: str, clauses: List[Dict]) -> str:
+        """Highlight a single paragraph with clause data."""
+        # Sort clauses by position
+        sorted_clauses = sorted(clauses, key=lambda x: x.get('start_pos', 0))
+        
+        result_parts = []
+        last_pos = 0
+        
+        for clause in sorted_clauses:
+            start_pos = clause.get('start_pos', 0)
+            end_pos = clause.get('end_pos', 0)
+            classification = clause.get('classification', 'neutral')
+            
+            # Add text before clause
+            if start_pos > last_pos:
+                before_text = para_text[last_pos:start_pos]
+                result_parts.append(self._escape_html(before_text))
+            
+            # Add highlighted clause
+            clause_text = para_text[start_pos:end_pos]
+            if clause_text.strip():
+                bg_color = self._get_highlight_color(classification)
+                text_color = self.text_colors.get(classification, self.text_colors['neutral']).hexval()
+                highlighted = f'<font color="{text_color}" backcolor="{bg_color}"><b>{self._escape_html(clause_text)}</b></font>'
+                result_parts.append(highlighted)
+            
+            last_pos = max(end_pos, last_pos)
+        
+        # Add remaining text
+        if last_pos < len(para_text):
+            remaining = para_text[last_pos:]
+            result_parts.append(self._escape_html(remaining))
+        
+        return ''.join(result_parts)
+    
+    def _clean_text_for_pdf(self, text: str) -> str:
+        """Clean text for PDF generation."""
+        # Remove problematic characters that cause ReportLab issues
+        text = text.replace('&', '&amp;')
+        text = text.replace('<', '&lt;').replace('>', '&gt;')  
+        
+        # Fix the HTML tags back
+        text = text.replace('&lt;font ', '<font ')
+        text = text.replace('&lt;/font&gt;', '</font>')
+        text = text.replace('&lt;b&gt;', '<b>')
+        text = text.replace('&lt;/b&gt;', '</b>')
+        
+        return text
+    
+    def _strip_html_tags(self, text: str) -> str:
+        """Remove HTML tags from text."""
+        import re
+        return re.sub(r'<[^>]+>', '', text)
     
     def _get_highlight_color(self, classification: str) -> str:
         """Get hex color for highlighting based on classification."""
