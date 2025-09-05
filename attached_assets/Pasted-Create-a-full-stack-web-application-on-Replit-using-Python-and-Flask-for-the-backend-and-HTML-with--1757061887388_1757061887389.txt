@@ -1,0 +1,45 @@
+Create a full-stack web application on Replit using Python and Flask for the backend, and HTML with CSS for the frontend. This application will simplify legal documents by leveraging OCR to extract text from images and NER to identify key entities.
+
+**Project Structure:**
+
+- `app.py`: The main Flask application file.
+- `templates/index.html`: The user-facing web page.
+- `static/style.css`: For styling the page.
+- `requirements.txt`: To list all necessary Python packages.
+- A placeholder folder for uploaded images/documents (e.g., `uploads/`).
+
+**Backend (`app.py`):**
+
+1.  **Dependencies:**
+    -   Add `flask`, `tesseract` (or a similar OCR library like `EasyOCR`), and `spacy` to `requirements.txt`.
+    -   Inform the user to download a pre-trained `spacy` model (e.g., `en_core_web_sm`).
+    -   Instruct the user to install Tesseract OCR on their system if they are running the project locally. On Replit, this might require a custom Nix environment setup.
+
+2.  **File Upload and OCR:**
+    -   Create a Flask route `/upload` that accepts `POST` requests.
+    -   This route should handle an uploaded image file (e.g., JPEG, PNG, or PDF).
+    -   Use an OCR library (e.g., `pytesseract` or `EasyOCR`) to extract all text from the uploaded image.
+
+3.  **Named Entity Recognition (NER):**
+    -   After extracting the text, use `spacy` to process it.
+    -   Identify and classify key legal entities. Create a list of entities to look for, such as: `PERSON`, `ORG` (Organization), `DATE`, `MONEY`, `LAW`, and custom entities like `CONTRACT_TERM`.
+    -   Extract these entities and store them in a structured format, like a JSON object.
+
+4.  **Generative AI Integration (Placeholder):**
+    -   Create a function (e.g., `simplify_legal_text(text, entities)`).
+    -   This function will be a placeholder for now. It should take the raw text and the extracted entities as input.
+    -   For a mock response, have it return a string that mentions the identified entities and a generic simplified summary, like: "Summary for a contract between [ORG1] and [ORG2]. Key terms include a payment of [MONEY] on [DATE]."
+
+5.  **Return to Frontend:**
+    -   The `/upload` route should return the structured data (the extracted text, entities, and the simplified summary) to the frontend.
+
+**Frontend (`index.html` & `style.css`):**
+
+-   Create a user-friendly form with a file input (`<input type="file">`) instead of a text area.
+-   Add a `POST` request using JavaScript's `fetch` API to send the file to the `/upload` route.
+-   On success, display the results in a clear and organized way. Show the original extracted text, a list of the identified entities, and the simplified summary.
+-   Add comments in `style.css` to explain basic styling for the form, button, and results area.
+
+**Final Deliverable:**
+
+Generate the complete boilerplate code for this project, including all files and the necessary setup instructions for OCR and NLP libraries. The code should be functional and demonstrate the complete pipeline from image upload to displaying a structured, simplified output.
