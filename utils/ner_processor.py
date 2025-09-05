@@ -186,16 +186,16 @@ class NERProcessor:
         # Sort by confidence (highest first)
         return sorted(unique_entities, key=lambda x: x['confidence'], reverse=True)
     
-    def generate_summary(self, text, entities):
+    def generate_basic_summary(self, text, entities):
         """
-        Generate a simplified summary of the legal document.
+        Generate a basic summary of the legal document (fallback method).
         
         Args:
             text (str): Original text
             entities (dict): Extracted entities
             
         Returns:
-            str: Simplified summary
+            str: Basic summary
         """
         try:
             summary_parts = []

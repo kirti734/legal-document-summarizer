@@ -30,6 +30,11 @@ class DocumentAnalyzer {
         document.getElementById('newAnalysisBtn').addEventListener('click', () => {
             this.resetInterface();
         });
+
+        // Download report button
+        document.getElementById('downloadReportBtn').addEventListener('click', () => {
+            this.downloadReport();
+        });
     }
 
     initializeDragAndDrop() {
@@ -202,8 +207,20 @@ class DocumentAnalyzer {
         // Populate summary
         document.getElementById('summaryText').textContent = data.summary;
 
+        // Display risk assessment
+        this.displayRiskAssessment(data.risk_assessment || {});
+
+        // Display clause analysis
+        this.displayClauseAnalysis(data.clause_analysis || []);
+
         // Populate entities
         this.displayEntities(data.entities);
+
+        // Store PDF report path for download
+        if (data.pdf_report) {
+            this.pdfReportPath = data.pdf_report;
+            document.getElementById('downloadReportBtn').style.display = 'inline-block';
+        }
 
         // Show results section
         document.getElementById('resultsSection').classList.remove('d-none');
@@ -280,6 +297,7 @@ class DocumentAnalyzer {
     resetInterface() {
         // Reset file selection
         this.currentFile = null;
+        this.pdfReportPath = null;
         document.getElementById('fileInput').value = '';
 
         // Reset upload area
@@ -299,6 +317,9 @@ class DocumentAnalyzer {
         const analyzeBtn = document.getElementById('analyzeBtn');
         analyzeBtn.disabled = true;
         analyzeBtn.classList.remove('pulse-animation');
+
+        // Hide download button
+        document.getElementById('downloadReportBtn').style.display = 'none';
 
         // Hide results and show upload section
         document.getElementById('resultsSection').classList.add('d-none');
@@ -328,6 +349,147 @@ class DocumentAnalyzer {
         };
         
         return text.replace(/[&<>"']/g, (m) => map[m]);
+    }
+
+    displayRiskAssessment(riskData) {
+        const riskElement = document.getElementById('riskAssessment');
+        
+        if (!riskData || !riskData.level) {
+            riskElement.innerHTML = '<p class="text-muted">Risk assessment not available.</p>';
+            return;
+        }
+
+        const level = riskData.level.toUpperCase();
+        const description = riskData.description || 'No description available';
+
+        let badgeClass = 'bg-secondary';
+        let iconClass = 'fas fa-question-circle';
+        
+        if (level === 'HIGH') {
+            badgeClass = 'bg-danger';
+            iconClass = 'fas fa-exclamation-triangle';
+        } else if (level === 'MEDIUM') {
+            badgeClass = 'bg-warning';
+            iconClass = 'fas fa-exclamation-circle';
+        } else if (level === 'LOW') {
+            badgeClass = 'bg-success';
+            iconClass = 'fas fa-check-circle';
+        }
+
+        riskElement.innerHTML = `
+            <div class="d-flex align-items-center mb-3">
+                <span class="badge ${badgeClass} me-3 p-2">
+                    <i class="${iconClass} me-1"></i>
+                    ${level} RISK
+                </span>
+            </div>
+            <p class="mb-0">${this.escapeHtml(description)}</p>
+        `;
+    }
+
+    displayClauseAnalysis(clauses) {
+        const clauseElement = document.getElementById('clauseAnalysis');
+        
+        if (!clauses || clauses.length === 0) {
+            clauseElement.innerHTML = '<p class="text-muted">No clause analysis available.</p>';
+            return;
+        }
+
+        const clauseCounts = { harmful: 0, warning: 0, good: 0, neutral: 0 };
+        clauses.forEach(clause => {
+            const type = clause.classification || 'neutral';
+            clauseCounts[type] = (clauseCounts[type] || 0) + 1;
+        });
+
+        let analysisHtml = `
+            <div class="row mb-4">
+                <div class="col-md-3 col-6 mb-2">
+                    <div class="text-center p-3 border rounded" style="background-color: #ffebee;">
+                        <div class="h4 text-danger mb-1">🔴 ${clauseCounts.harmful}</div>
+                        <small class="text-muted">Harmful</small>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6 mb-2">
+                    <div class="text-center p-3 border rounded" style="background-color: #fff3e0;">
+                        <div class="h4 text-warning mb-1">🟡 ${clauseCounts.warning}</div>
+                        <small class="text-muted">Warning</small>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6 mb-2">
+                    <div class="text-center p-3 border rounded" style="background-color: #e8f5e8;">
+                        <div class="h4 text-success mb-1">🟢 ${clauseCounts.good}</div>
+                        <small class="text-muted">Good</small>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6 mb-2">
+                    <div class="text-center p-3 border rounded" style="background-color: #f5f5f5;">
+                        <div class="h4 text-secondary mb-1">⚪ ${clauseCounts.neutral}</div>
+                        <small class="text-muted">Neutral</small>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Add individual clauses (show first 5)
+        analysisHtml += '<h6 class="mb-3">Clause Details:</h6>';
+        
+        const displayClauses = clauses.slice(0, 5);
+        displayClauses.forEach((clause, index) => {
+            const classification = clause.classification || 'neutral';
+            const confidence = Math.round((clause.confidence || 0) * 100);
+            const text = clause.text || 'No text available';
+            const reasoning = clause.reasoning || 'No analysis available';
+            
+            const colorMap = {
+                harmful: { bg: '#ffebee', text: '#d32f2f', emoji: '🔴' },
+                warning: { bg: '#fff3e0', text: '#f57c00', emoji: '🟡' },
+                good: { bg: '#e8f5e8', text: '#388e3c', emoji: '🟢' },
+                neutral: { bg: '#f5f5f5', text: '#424242', emoji: '⚪' }
+            };
+            
+            const colors = colorMap[classification] || colorMap.neutral;
+            
+            analysisHtml += `
+                <div class="mb-3 p-3 border rounded" style="background-color: ${colors.bg}; border-left: 4px solid ${colors.text} !important;">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="badge" style="background-color: ${colors.text}; color: white;">
+                            ${colors.emoji} ${classification.toUpperCase()} (${confidence}%)
+                        </span>
+                    </div>
+                    <div class="mb-2">
+                        <strong>Text:</strong> ${this.escapeHtml(text.substring(0, 200))}${text.length > 200 ? '...' : ''}
+                    </div>
+                    <div>
+                        <strong>Analysis:</strong> ${this.escapeHtml(reasoning)}
+                    </div>
+                </div>
+            `;
+        });
+
+        if (clauses.length > 5) {
+            analysisHtml += `<p class="text-muted">... and ${clauses.length - 5} more clauses analyzed.</p>`;
+        }
+
+        clauseElement.innerHTML = analysisHtml;
+    }
+
+    downloadReport() {
+        if (!this.pdfReportPath) {
+            this.showError('No report available for download.');
+            return;
+        }
+
+        // Extract filename from path
+        const filename = this.pdfReportPath.split('/').pop();
+        const downloadUrl = `/download-report/${filename}`;
+        
+        // Create temporary link to trigger download
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 }
 

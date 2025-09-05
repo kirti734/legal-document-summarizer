@@ -6,6 +6,8 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 import uuid
 from utils.ocr_processor import OCRProcessor
 from utils.ner_processor import NERProcessor
+from utils.gemini_analyzer import GeminiAnalyzer
+from utils.pdf_generator import ColorCodedPDFGenerator
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -28,6 +30,8 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 # Initialize processors
 ocr_processor = OCRProcessor()
 ner_processor = NERProcessor()
+gemini_analyzer = GeminiAnalyzer()
+pdf_generator = ColorCodedPDFGenerator()
 
 def allowed_file(filename):
     """Check if file extension is allowed."""
@@ -86,8 +90,33 @@ def upload_file():
                 # Process entities using NER
                 entities = ner_processor.extract_entities(extracted_text)
                 
-                # Generate simplified summary
-                summary = ner_processor.generate_summary(extracted_text, entities)
+                # Analyze document with Gemini AI
+                try:
+                    gemini_analysis = gemini_analyzer.analyze_document(extracted_text, entities)
+                    summary = gemini_analysis.get('summary', 'Analysis not available')
+                    clause_analysis = gemini_analysis.get('clauses', [])
+                    risk_assessment = gemini_analysis.get('risk_assessment', {})
+                    
+                    # Generate color-coded PDF report
+                    try:
+                        pdf_path = pdf_generator.generate_analysis_report(
+                            extracted_text, 
+                            gemini_analysis, 
+                            entities, 
+                            filename
+                        )
+                        app.logger.info(f"Generated analysis report: {pdf_path}")
+                    except Exception as pdf_error:
+                        app.logger.warning(f"PDF generation failed: {pdf_error}")
+                        pdf_path = None
+                        
+                except Exception as gemini_error:
+                    app.logger.warning(f"Gemini analysis failed: {gemini_error}")
+                    # Fallback to basic NER summary
+                    summary = ner_processor.generate_basic_summary(extracted_text, entities)
+                    clause_analysis = []
+                    risk_assessment = {'level': 'unknown', 'description': 'AI analysis unavailable'}
+                    pdf_path = None
                 
                 # Clean up uploaded file
                 try:
@@ -101,6 +130,9 @@ def upload_file():
                         'original_text': extracted_text,
                         'entities': entities,
                         'summary': summary,
+                        'clause_analysis': clause_analysis,
+                        'risk_assessment': risk_assessment,
+                        'pdf_report': pdf_path,
                         'filename': filename
                     }
                 })
@@ -123,6 +155,37 @@ def upload_file():
         return jsonify({
             'success': False,
             'error': 'An unexpected error occurred. Please try again.'
+        }), 500
+
+@app.route('/download-report/<path:filename>')
+def download_report(filename):
+    """Serve generated PDF reports."""
+    try:
+        from flask import send_file
+        import os
+        
+        # Security: only allow files from reports directory
+        safe_filename = secure_filename(filename)
+        file_path = os.path.join('reports', safe_filename)
+        
+        if not os.path.exists(file_path):
+            return jsonify({
+                'success': False,
+                'error': 'Report file not found.'
+            }), 404
+        
+        return send_file(
+            file_path,
+            as_attachment=True,
+            download_name=f"legal_analysis_{safe_filename}",
+            mimetype='application/pdf'
+        )
+        
+    except Exception as e:
+        app.logger.error(f"Report download error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Could not download report.'
         }), 500
 
 @app.errorhandler(413)
