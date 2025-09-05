@@ -110,17 +110,17 @@ def upload_file():
                         risk_assessment = gemini_analysis.get('risk_assessment', {})
                         app.logger.info("Gemini analysis completed successfully")
                         
-                        # Generate color-coded PDF report
+                        # Generate color-coded highlighted PDF (like original document with highlights)
                         try:
-                            pdf_path = pdf_generator.generate_analysis_report(
+                            pdf_path = pdf_generator.generate_highlighted_document(
                                 extracted_text, 
                                 gemini_analysis, 
                                 entities, 
                                 filename
                             )
-                            app.logger.info(f"Generated analysis report: {pdf_path}")
+                            app.logger.info(f"Generated highlighted document: {pdf_path}")
                         except Exception as pdf_error:
-                            app.logger.warning(f"PDF generation failed: {pdf_error}")
+                            app.logger.warning(f"Highlighted PDF generation failed: {pdf_error}")
                             pdf_path = None
                             
                     finally:

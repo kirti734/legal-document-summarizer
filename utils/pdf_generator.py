@@ -32,6 +32,72 @@ class ColorCodedPDFGenerator:
             'neutral': HexColor('#424242'),    # Dark gray text
         }
     
+    def generate_highlighted_document(self, original_text: str, analysis_data: Dict[str, Any], 
+                                    entities: Dict, filename: str) -> str:
+        """
+        Generate a PDF that looks like the original document but with color-coded highlights.
+        
+        Args:
+            original_text (str): Original document text
+            analysis_data (dict): Analysis results from Gemini
+            entities (dict): Extracted entities
+            filename (str): Original filename
+            
+        Returns:
+            str: Path to generated highlighted PDF file
+        """
+        try:
+            # Create output directory if it doesn't exist
+            output_dir = 'reports'
+            os.makedirs(output_dir, exist_ok=True)
+            
+            # Generate unique filename
+            import uuid
+            pdf_filename = f"highlighted_{uuid.uuid4().hex[:8]}.pdf"
+            pdf_path = os.path.join(output_dir, pdf_filename)
+            
+            # Create PDF document with similar layout to original
+            doc = SimpleDocTemplate(
+                pdf_path,
+                pagesize=letter,
+                rightMargin=0.75*inch,
+                leftMargin=0.75*inch,
+                topMargin=0.75*inch,
+                bottomMargin=0.75*inch
+            )
+            
+            # Build document content - just the highlighted text
+            story = []
+            styles = getSampleStyleSheet()
+            
+            # Add a simple title with the filename
+            title_style = ParagraphStyle(
+                'SimpleTitle',
+                parent=styles['Normal'],
+                fontSize=12,
+                textColor=HexColor('#333333'),
+                alignment=TA_CENTER,
+                spaceAfter=20,
+                fontName='Helvetica-Bold'
+            )
+            
+            clean_filename = filename.replace('_', ' ').replace('.pdf', '').replace('.txt', '')
+            story.append(Paragraph(clean_filename, title_style))
+            story.append(Spacer(1, 20))
+            
+            # Add the highlighted original text (main content)
+            self._add_simple_highlighted_text(story, styles, original_text, analysis_data.get('clauses', []))
+            
+            # Build PDF
+            doc.build(story)
+            
+            self.logger.info(f"Generated highlighted document: {pdf_path}")
+            return pdf_path
+            
+        except Exception as e:
+            self.logger.error(f"PDF generation failed: {e}")
+            raise Exception(f"Failed to generate highlighted PDF: {str(e)}")
+
     def generate_analysis_report(self, original_text: str, analysis_data: Dict[str, Any], 
                                entities: Dict, filename: str) -> str:
         """
@@ -342,6 +408,87 @@ class ColorCodedPDFGenerator:
             chunks.append(' '.join(current_chunk))
         
         return chunks
+    
+    def _add_simple_highlighted_text(self, story: List, styles, original_text: str, clauses: List[Dict]):
+        """Add original text with simple color highlights - no analysis sections."""
+        if not clauses:
+            # If no clause analysis, just show original text
+            story.append(Paragraph(original_text, styles['Normal']))
+            return
+        
+        # Sort clauses by start position
+        sorted_clauses = sorted(clauses, key=lambda x: x.get('start_pos', 0))
+        
+        # Create highlighted text with background colors instead of just text colors
+        highlighted_parts = []
+        last_pos = 0
+        
+        for clause in sorted_clauses:
+            start_pos = clause.get('start_pos', 0)
+            end_pos = clause.get('end_pos', 0)
+            classification = clause.get('classification', 'neutral')
+            
+            # Add text before this clause (normal text)
+            if start_pos > last_pos:
+                before_text = original_text[last_pos:start_pos]
+                if before_text.strip():
+                    highlighted_parts.append(self._escape_html(before_text))
+            
+            # Add highlighted clause with background color
+            clause_text = original_text[start_pos:end_pos] if end_pos > start_pos else clause.get('text', '')
+            if clause_text.strip():
+                bg_color = self._get_highlight_color(classification)
+                text_color = self.text_colors.get(classification, self.text_colors['neutral']).hexval()
+                highlighted_parts.append(f'<font color="{text_color}" backcolor="{bg_color}"><b>{self._escape_html(clause_text)}</b></font>')
+            
+            last_pos = max(end_pos, last_pos)
+        
+        # Add remaining text
+        if last_pos < len(original_text):
+            remaining_text = original_text[last_pos:]
+            if remaining_text.strip():
+                highlighted_parts.append(self._escape_html(remaining_text))
+        
+        # Create final highlighted text
+        highlighted_text = ''.join(highlighted_parts)
+        
+        # Document-like text style
+        text_style = ParagraphStyle(
+            'DocumentText',
+            parent=styles['Normal'],
+            fontSize=11,
+            leading=16,
+            alignment=TA_JUSTIFY,
+            spaceBefore=0,
+            spaceAfter=4
+        )
+        
+        # Split text into manageable chunks
+        chunks = self._split_text_into_chunks(highlighted_text, 2000)
+        for chunk in chunks:
+            if chunk.strip():
+                try:
+                    story.append(Paragraph(chunk, text_style))
+                except Exception as e:
+                    # Fallback to plain text if HTML parsing fails
+                    plain_chunk = chunk.replace('<font color="', '').replace('</font>', '').replace('<b>', '').replace('</b>', '')
+                    story.append(Paragraph(plain_chunk, text_style))
+                story.append(Spacer(1, 4))
+    
+    def _get_highlight_color(self, classification: str) -> str:
+        """Get hex color for highlighting based on classification."""
+        color_map = {
+            'harmful': '#ffcdd2',     # Light red
+            'warning': '#fff3b0',     # Light yellow  
+            'good': '#c8e6c9',        # Light green
+            'neutral': '#f5f5f5'      # Light gray
+        }
+        return color_map.get(classification, color_map['neutral'])
+    
+    def _escape_html(self, text: str) -> str:
+        """Escape HTML characters in text."""
+        import html
+        return html.escape(text, quote=False)
     
     def _get_current_date(self) -> str:
         """Get current date formatted for display."""
