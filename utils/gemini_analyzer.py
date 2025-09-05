@@ -31,7 +31,11 @@ class GeminiAnalyzer:
             if not api_key:
                 raise ValueError("GEMINI_API_KEY environment variable not found")
             
-            self.client = genai.Client(api_key=api_key)
+            # Initialize client with timeout settings
+            self.client = genai.Client(
+                api_key=api_key,
+                http_options={'timeout': 30}  # 30 second timeout
+            )
             self.logger.info("Gemini AI client initialized successfully")
             
         except Exception as e:
@@ -50,24 +54,35 @@ class GeminiAnalyzer:
             dict: Analysis results with clause classifications
         """
         try:
-            # Get clause analysis
+            self.logger.info("Starting clause analysis...")
+            
+            # Get clause analysis with timeout protection
             clause_analysis = self._classify_clauses(text)
+            self.logger.info(f"Classified {len(clause_analysis)} clauses")
             
             # Get overall summary
+            self.logger.info("Generating summary...")
             summary = self._generate_summary(text, entities, clause_analysis)
+            
+            # Assess risk
+            risk_assessment = self._assess_overall_risk(clause_analysis)
             
             return {
                 'clauses': clause_analysis,
                 'summary': summary,
-                'risk_assessment': self._assess_overall_risk(clause_analysis)
+                'risk_assessment': risk_assessment
             }
             
         except Exception as e:
             self.logger.error(f"Document analysis failed: {e}")
+            # Return fallback analysis
+            fallback_clauses = self._create_fallback_analysis(text)
+            fallback_counts = {'harmful': 0, 'warning': 0, 'good': 0, 'neutral': len(fallback_clauses)}
+            
             return {
-                'clauses': [],
-                'summary': f"Analysis failed: {str(e)}",
-                'risk_assessment': {'level': 'unknown', 'description': 'Could not analyze document'}
+                'clauses': fallback_clauses,
+                'summary': self._generate_fallback_summary(entities, fallback_counts),
+                'risk_assessment': {'level': 'unknown', 'description': 'AI analysis unavailable - basic analysis provided'}
             }
     
     def _classify_clauses(self, text: str) -> List[Dict[str, Any]]:

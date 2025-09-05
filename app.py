@@ -90,32 +90,49 @@ def upload_file():
                 # Process entities using NER
                 entities = ner_processor.extract_entities(extracted_text)
                 
-                # Analyze document with Gemini AI
+                # Analyze document with Gemini AI (with timeout protection)
+                app.logger.info("Starting Gemini AI analysis...")
                 try:
-                    gemini_analysis = gemini_analyzer.analyze_document(extracted_text, entities)
-                    summary = gemini_analysis.get('summary', 'Analysis not available')
-                    clause_analysis = gemini_analysis.get('clauses', [])
-                    risk_assessment = gemini_analysis.get('risk_assessment', {})
+                    # Set a shorter timeout for Gemini analysis
+                    import signal
                     
-                    # Generate color-coded PDF report
+                    def timeout_handler(signum, frame):
+                        raise TimeoutError("Gemini analysis timed out")
+                    
+                    # Set 45 second timeout
+                    signal.signal(signal.SIGALRM, timeout_handler)
+                    signal.alarm(45)
+                    
                     try:
-                        pdf_path = pdf_generator.generate_analysis_report(
-                            extracted_text, 
-                            gemini_analysis, 
-                            entities, 
-                            filename
-                        )
-                        app.logger.info(f"Generated analysis report: {pdf_path}")
-                    except Exception as pdf_error:
-                        app.logger.warning(f"PDF generation failed: {pdf_error}")
-                        pdf_path = None
+                        gemini_analysis = gemini_analyzer.analyze_document(extracted_text, entities)
+                        summary = gemini_analysis.get('summary', 'Analysis not available')
+                        clause_analysis = gemini_analysis.get('clauses', [])
+                        risk_assessment = gemini_analysis.get('risk_assessment', {})
+                        app.logger.info("Gemini analysis completed successfully")
                         
-                except Exception as gemini_error:
-                    app.logger.warning(f"Gemini analysis failed: {gemini_error}")
+                        # Generate color-coded PDF report
+                        try:
+                            pdf_path = pdf_generator.generate_analysis_report(
+                                extracted_text, 
+                                gemini_analysis, 
+                                entities, 
+                                filename
+                            )
+                            app.logger.info(f"Generated analysis report: {pdf_path}")
+                        except Exception as pdf_error:
+                            app.logger.warning(f"PDF generation failed: {pdf_error}")
+                            pdf_path = None
+                            
+                    finally:
+                        # Cancel the alarm
+                        signal.alarm(0)
+                        
+                except (TimeoutError, Exception) as gemini_error:
+                    app.logger.warning(f"Gemini analysis failed or timed out: {gemini_error}")
                     # Fallback to basic NER summary
                     summary = ner_processor.generate_basic_summary(extracted_text, entities)
                     clause_analysis = []
-                    risk_assessment = {'level': 'unknown', 'description': 'AI analysis unavailable'}
+                    risk_assessment = {'level': 'unknown', 'description': 'AI analysis unavailable - using basic analysis'}
                     pdf_path = None
                 
                 # Clean up uploaded file
