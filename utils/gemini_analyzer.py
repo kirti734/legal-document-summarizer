@@ -73,60 +73,85 @@ class GeminiAnalyzer:
     def _classify_clauses(self, text: str) -> List[Dict[str, Any]]:
         """Classify clauses in the document using Gemini AI."""
         try:
-            system_prompt = """You are a legal document analyzer. Analyze the provided text and identify distinct clauses or sections. For each clause, classify it as one of:
+            # Split text into manageable chunks for analysis
+            text_chunk = text[:3000] if len(text) > 3000 else text
+            
+            prompt = f"""Analyze this legal document and identify key clauses. Classify each clause as harmful, warning, good, or neutral.
 
-1. 'harmful' - Clauses that are clearly disadvantageous, unfair, or potentially harmful to one party
-2. 'warning' - Clauses that require careful attention, may have risks, or need review
-3. 'good' - Clauses that are beneficial, fair, or standard good practice
-4. 'neutral' - Standard clauses with no particular risk or benefit
+Document text:
+{text_chunk}
 
-For each clause, provide:
-- The exact text of the clause
-- Classification (harmful/warning/good/neutral)
-- Brief reasoning for the classification
-- Confidence level (0.0 to 1.0)
-- Approximate character positions in the original text
+Please analyze the document and return a JSON response with this exact structure:
+{{
+  "clauses": [
+    {{
+      "text": "exact clause text",
+      "classification": "harmful|warning|good|neutral",
+      "reasoning": "brief explanation",
+      "confidence": 0.8
+    }}
+  ]
+}}
 
-Respond with valid JSON only."""
+Focus on the most important clauses. Limit to 5-8 clauses maximum."""
 
             response = self.client.models.generate_content(
-                model="gemini-2.5-pro",
-                contents=[
-                    types.Content(role="user", parts=[types.Part(text=f"Analyze this legal document:\n\n{text}")])
-                ],
+                model="gemini-2.5-flash",
+                contents=prompt,
                 config=types.GenerateContentConfig(
-                    system_instruction=system_prompt,
-                    response_mime_type="application/json",
                     temperature=0.1,
-                    max_output_tokens=4000
+                    max_output_tokens=2000
                 ),
             )
 
             if not response.text:
-                raise ValueError("Empty response from Gemini")
+                self.logger.warning("Empty response from Gemini")
+                return self._create_fallback_analysis(text)
             
-            # Parse the JSON response
-            analysis_data = json.loads(response.text)
+            # Clean the response text
+            response_text = response.text.strip()
+            
+            # Try to extract JSON from the response
+            try:
+                # Look for JSON content between curly braces
+                start_idx = response_text.find('{')
+                end_idx = response_text.rfind('}') + 1
+                
+                if start_idx != -1 and end_idx > start_idx:
+                    json_text = response_text[start_idx:end_idx]
+                    analysis_data = json.loads(json_text)
+                else:
+                    # If no JSON found, try parsing the whole response
+                    analysis_data = json.loads(response_text)
+                    
+            except json.JSONDecodeError as je:
+                self.logger.warning(f"JSON parsing failed: {je}")
+                self.logger.warning(f"Response text: {response_text[:500]}...")
+                return self._create_fallback_analysis(text)
             
             # Process and validate the response
             clauses = []
-            if 'clauses' in analysis_data:
-                for clause_data in analysis_data['clauses']:
-                    clause = {
-                        'text': clause_data.get('text', ''),
-                        'classification': clause_data.get('classification', 'neutral'),
-                        'reasoning': clause_data.get('reasoning', ''),
-                        'confidence': float(clause_data.get('confidence', 0.5)),
-                        'start_pos': clause_data.get('start_pos', 0),
-                        'end_pos': clause_data.get('end_pos', 0)
-                    }
-                    clauses.append(clause)
+            if isinstance(analysis_data, dict) and 'clauses' in analysis_data:
+                for i, clause_data in enumerate(analysis_data['clauses']):
+                    if isinstance(clause_data, dict):
+                        clause = {
+                            'text': clause_data.get('text', f'Clause {i+1}'),
+                            'classification': clause_data.get('classification', 'neutral'),
+                            'reasoning': clause_data.get('reasoning', 'No reasoning provided'),
+                            'confidence': float(clause_data.get('confidence', 0.5)),
+                            'start_pos': i * 100,  # Approximate positions
+                            'end_pos': (i + 1) * 100
+                        }
+                        clauses.append(clause)
+            
+            if not clauses:
+                self.logger.warning("No clauses extracted from Gemini response")
+                return self._create_fallback_analysis(text)
             
             return clauses
             
         except Exception as e:
             self.logger.error(f"Clause classification failed: {e}")
-            # Fallback: create basic analysis
             return self._create_fallback_analysis(text)
     
     def _generate_summary(self, text: str, entities: Dict, clause_analysis: List[Dict]) -> str:
@@ -139,44 +164,49 @@ Respond with valid JSON only."""
                 clause_counts[clause_type] = clause_counts.get(clause_type, 0) + 1
             
             entities_summary = self._format_entities_for_summary(entities)
+            text_sample = text[:1500] if len(text) > 1500 else text
             
-            prompt = f"""Provide a comprehensive, easy-to-understand summary of this legal document.
+            prompt = f"""Please provide a clear, easy-to-understand summary of this legal document.
 
-Document Text:
-{text[:2000]}...
+Document Sample:
+{text_sample}
 
-Entities Found:
+Key Information Found:
 {entities_summary}
 
-Clause Analysis:
-- Harmful clauses: {clause_counts['harmful']}
-- Warning clauses: {clause_counts['warning']}
-- Good clauses: {clause_counts['good']}
-- Neutral clauses: {clause_counts['neutral']}
+Analysis Results:
+- Harmful clauses found: {clause_counts['harmful']}
+- Warning clauses found: {clause_counts['warning']}
+- Good clauses found: {clause_counts['good']}
+- Neutral clauses found: {clause_counts['neutral']}
 
-Please provide:
-1. Document type and purpose
-2. Key parties involved
-3. Main terms and conditions
-4. Potential risks or concerns
-5. Overall recommendation
+Please write a summary that includes:
+1. What type of document this is
+2. Who are the main parties involved
+3. What are the key terms and obligations
+4. Any potential risks or concerns
+5. Overall assessment
 
-Write in plain, simple language that non-lawyers can understand."""
+Use simple language that anyone can understand. Keep it concise but informative."""
 
             response = self.client.models.generate_content(
                 model="gemini-2.5-flash",
                 contents=prompt,
                 config=types.GenerateContentConfig(
-                    temperature=0.3,
-                    max_output_tokens=1000
+                    temperature=0.2,
+                    max_output_tokens=800
                 )
             )
 
-            return response.text if response.text else "Could not generate summary"
+            if response.text and response.text.strip():
+                return response.text.strip()
+            else:
+                self.logger.warning("Empty summary response from Gemini")
+                return self._generate_fallback_summary(entities, clause_counts)
             
         except Exception as e:
             self.logger.error(f"Summary generation failed: {e}")
-            return f"Summary generation failed: {str(e)}"
+            return self._generate_fallback_summary(entities, clause_counts)
     
     def _assess_overall_risk(self, clause_analysis: List[Dict]) -> Dict[str, Any]:
         """Assess overall risk level based on clause analysis."""
@@ -239,3 +269,36 @@ Write in plain, simple language that non-lawyers can understand."""
             pos += len(sentence) + 1
         
         return clauses
+    
+    def _generate_fallback_summary(self, entities: Dict, clause_counts: Dict) -> str:
+        """Generate a basic fallback summary when Gemini fails."""
+        summary_parts = []
+        
+        # Basic document info
+        summary_parts.append("Document Analysis Summary:")
+        summary_parts.append("")
+        
+        # Clause analysis
+        total_clauses = sum(clause_counts.values())
+        if total_clauses > 0:
+            summary_parts.append(f"Found {total_clauses} clauses for analysis:")
+            if clause_counts['harmful'] > 0:
+                summary_parts.append(f"• {clause_counts['harmful']} potentially harmful clauses")
+            if clause_counts['warning'] > 0:
+                summary_parts.append(f"• {clause_counts['warning']} clauses requiring attention")
+            if clause_counts['good'] > 0:
+                summary_parts.append(f"• {clause_counts['good']} beneficial clauses")
+            if clause_counts['neutral'] > 0:
+                summary_parts.append(f"• {clause_counts['neutral']} standard clauses")
+        
+        # Entity information
+        if entities:
+            summary_parts.append("")
+            summary_parts.append("Key information identified:")
+            for entity_type, entity_list in entities.items():
+                if entity_list:
+                    entity_name = entity_type.replace('_', ' ').title()
+                    items = [e.get('text', str(e)) for e in entity_list[:2]]
+                    summary_parts.append(f"• {entity_name}: {', '.join(items)}")
+        
+        return "\n".join(summary_parts)
