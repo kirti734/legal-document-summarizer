@@ -3,7 +3,8 @@ class DocumentAnalyzer {
     constructor() {
         this.currentFile = null;
         this.isProcessing = false;
-        
+        this.pdfReportPath = null;
+
         this.initializeEventListeners();
         this.initializeDragAndDrop();
     }
@@ -75,9 +76,9 @@ class DocumentAnalyzer {
 
     handleFileSelect(file) {
         // Validate file type
-        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf', 'image/tiff', 'image/bmp'];
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf', 'image/tiff', 'image/bmp', 'text/plain'];
         if (!allowedTypes.includes(file.type)) {
-            this.showError('Invalid file type. Please upload: JPG, PNG, PDF, TIFF, or BMP files.');
+            this.showError('Invalid file type. Please upload: JPG, PNG, PDF, TIFF, BMP, or TXT files.');
             return;
         }
 
@@ -99,6 +100,12 @@ class DocumentAnalyzer {
 
         uploadArea.classList.add('has-file');
 
+        // Clear previous file-info if exists
+        const previous = uploadArea.querySelector('.file-info');
+        if (previous) {
+            previous.remove();
+        }
+
         // Create file info display
         const fileInfo = document.createElement('div');
         fileInfo.className = 'file-info';
@@ -116,7 +123,7 @@ class DocumentAnalyzer {
             </button>
         `;
 
-        // Replace upload content with file info
+        // Hide upload content and append file info
         uploadContent.style.display = 'none';
         uploadArea.appendChild(fileInfo);
 
@@ -144,7 +151,6 @@ class DocumentAnalyzer {
         formData.append('file', this.currentFile);
 
         try {
-            // Update loading step
             this.updateLoadingStep('Uploading file');
 
             const response = await fetch('/upload', {
@@ -158,13 +164,11 @@ class DocumentAnalyzer {
             }
 
             this.updateLoadingStep('Extracting text');
-            
-            // Add artificial delay for better UX
             await new Promise(resolve => setTimeout(resolve, 1000));
-            
+
             this.updateLoadingStep('Analyzing entities');
             await new Promise(resolve => setTimeout(resolve, 1500));
-            
+
             this.updateLoadingStep('Generating summary');
             await new Promise(resolve => setTimeout(resolve, 1000));
 
@@ -202,10 +206,10 @@ class DocumentAnalyzer {
 
     displayResults(data) {
         // Populate original text
-        document.getElementById('originalText').textContent = data.original_text;
+        document.getElementById('originalText').textContent = data.original_text || '';
 
         // Populate summary
-        document.getElementById('summaryText').textContent = data.summary;
+        document.getElementById('summaryText').textContent = data.summary || '';
 
         // Display risk assessment
         this.displayRiskAssessment(data.risk_assessment || {});
@@ -216,17 +220,26 @@ class DocumentAnalyzer {
         // Populate entities
         this.displayEntities(data.entities);
 
-        // Store PDF report path for download
-        if (data.pdf_report) {
-            this.pdfReportPath = data.pdf_report;
-            document.getElementById('downloadReportBtn').style.display = 'inline-block';
+        // Show PDF preview if available
+        if (data.pdf_report_url) {
+            const pdfPreviewSection = document.getElementById('pdfPreviewSection');
+            const pdfViewer = document.getElementById('pdfViewer');
+            pdfPreviewSection.classList.remove('d-none');
+            pdfViewer.src = data.pdf_report_url;
+
+            // Show download button and bind link
+            const downloadBtn = document.getElementById('downloadReportBtn');
+            downloadBtn.style.display = 'inline-block';
+            downloadBtn.onclick = () => {
+                window.open(data.pdf_report_url, '_blank');
+            };
         }
 
         // Show results section
         document.getElementById('resultsSection').classList.remove('d-none');
-        
+
         // Scroll to results
-        document.getElementById('resultsSection').scrollIntoView({ 
+        document.getElementById('resultsSection').scrollIntoView({
             behavior: 'smooth',
             block: 'start'
         });
@@ -256,15 +269,15 @@ class DocumentAnalyzer {
 
         Object.entries(entities).forEach(([entityType, entityList]) => {
             if (entityList && entityList.length > 0) {
-                const mapping = entityTypeMapping[entityType] || { 
-                    name: entityType.replace('_', ' '), 
+                const mapping = entityTypeMapping[entityType] || {
+                    name: entityType.replace('_', ' '),
                     class: 'default',
                     icon: 'fas fa-tag'
                 };
 
                 const entityGroup = document.createElement('div');
                 entityGroup.className = `entity-group ${mapping.class}`;
-                
+
                 entityGroup.innerHTML = `
                     <h6>
                         <i class="${mapping.icon} me-2"></i>
@@ -295,7 +308,6 @@ class DocumentAnalyzer {
     }
 
     resetInterface() {
-        // Reset file selection
         this.currentFile = null;
         this.pdfReportPath = null;
         document.getElementById('fileInput').value = '';
@@ -303,12 +315,21 @@ class DocumentAnalyzer {
         // Reset upload area
         const uploadArea = document.getElementById('uploadArea');
         uploadArea.classList.remove('has-file', 'error');
-        
+
         // Remove file info if exists
         const fileInfo = uploadArea.querySelector('.file-info');
         if (fileInfo) {
             fileInfo.remove();
         }
+
+        // Reset iframe PDF preview
+        document.getElementById('pdfPreviewSection').classList.add('d-none');
+        document.getElementById('pdfViewer').src = '';
+
+        // Hide download button
+        const downloadBtn = document.getElementById('downloadReportBtn');
+        downloadBtn.style.display = 'none';
+        downloadBtn.onclick = null;
 
         // Show upload content
         document.getElementById('uploadContent').style.display = 'block';
@@ -317,9 +338,6 @@ class DocumentAnalyzer {
         const analyzeBtn = document.getElementById('analyzeBtn');
         analyzeBtn.disabled = true;
         analyzeBtn.classList.remove('pulse-animation');
-
-        // Hide download button
-        document.getElementById('downloadReportBtn').style.display = 'none';
 
         // Hide results and show upload section
         document.getElementById('resultsSection').classList.add('d-none');
@@ -331,11 +349,9 @@ class DocumentAnalyzer {
 
     formatFileSize(bytes) {
         if (bytes === 0) return '0 Bytes';
-        
         const k = 1024;
         const sizes = ['Bytes', 'KB', 'MB', 'GB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
-        
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
 
@@ -347,13 +363,12 @@ class DocumentAnalyzer {
             '"': '&quot;',
             "'": '&#039;'
         };
-        
         return text.replace(/[&<>"']/g, (m) => map[m]);
     }
 
     displayRiskAssessment(riskData) {
         const riskElement = document.getElementById('riskAssessment');
-        
+
         if (!riskData || !riskData.level) {
             riskElement.innerHTML = '<p class="text-muted">Risk assessment not available.</p>';
             return;
@@ -364,7 +379,7 @@ class DocumentAnalyzer {
 
         let badgeClass = 'bg-secondary';
         let iconClass = 'fas fa-question-circle';
-        
+
         if (level === 'HIGH') {
             badgeClass = 'bg-danger';
             iconClass = 'fas fa-exclamation-triangle';
@@ -389,7 +404,7 @@ class DocumentAnalyzer {
 
     displayClauseAnalysis(clauses) {
         const clauseElement = document.getElementById('clauseAnalysis');
-        
+
         if (!clauses || clauses.length === 0) {
             clauseElement.innerHTML = '<p class="text-muted">No clause analysis available.</p>';
             return;
@@ -430,25 +445,25 @@ class DocumentAnalyzer {
             </div>
         `;
 
-        // Add individual clauses (show first 5)
+        // Add clause details for first 5 clauses
         analysisHtml += '<h6 class="mb-3">Clause Details:</h6>';
-        
+
         const displayClauses = clauses.slice(0, 5);
-        displayClauses.forEach((clause, index) => {
+        displayClauses.forEach((clause) => {
             const classification = clause.classification || 'neutral';
             const confidence = Math.round((clause.confidence || 0) * 100);
             const text = clause.text || 'No text available';
             const reasoning = clause.reasoning || 'No analysis available';
-            
+
             const colorMap = {
                 harmful: { bg: '#ffebee', text: '#d32f2f', emoji: '🔴' },
                 warning: { bg: '#fff3e0', text: '#f57c00', emoji: '🟡' },
                 good: { bg: '#e8f5e8', text: '#388e3c', emoji: '🟢' },
                 neutral: { bg: '#f5f5f5', text: '#424242', emoji: '⚪' }
             };
-            
+
             const colors = colorMap[classification] || colorMap.neutral;
-            
+
             analysisHtml += `
                 <div class="mb-3 p-3 border rounded" style="background-color: ${colors.bg}; border-left: 4px solid ${colors.text} !important;">
                     <div class="d-flex justify-content-between align-items-start mb-2">
@@ -482,7 +497,7 @@ class DocumentAnalyzer {
         // Extract filename from path
         const filename = this.pdfReportPath.split('/').pop();
         const downloadUrl = `/download-report/${filename}`;
-        
+
         // Create temporary link to trigger download
         const link = document.createElement('a');
         link.href = downloadUrl;
@@ -493,7 +508,7 @@ class DocumentAnalyzer {
     }
 }
 
-// Add CSS animation for pulse effect
+// CSS Animation for Pulse Effect
 const style = document.createElement('style');
 style.textContent = `
     .pulse-animation {
