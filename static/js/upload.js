@@ -3,7 +3,6 @@ class DocumentAnalyzer {
     constructor() {
         this.currentFile = null;
         this.isProcessing = false;
-        this.pdfReportPath = null;
 
         this.initializeEventListeners();
         this.initializeDragAndDrop();
@@ -30,11 +29,6 @@ class DocumentAnalyzer {
         // New analysis button
         document.getElementById('newAnalysisBtn').addEventListener('click', () => {
             this.resetInterface();
-        });
-
-        // Download report button
-        document.getElementById('downloadReportBtn').addEventListener('click', () => {
-            this.downloadReport();
         });
     }
 
@@ -75,17 +69,15 @@ class DocumentAnalyzer {
     }
 
     handleFileSelect(file) {
-        // Validate file type
         const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf', 'image/tiff', 'image/bmp', 'text/plain'];
         if (!allowedTypes.includes(file.type)) {
             this.showError('Invalid file type. Please upload: JPG, PNG, PDF, TIFF, BMP, or TXT files.');
             return;
         }
 
-        // Validate file size (16MB limit)
-        const maxSize = 16 * 1024 * 1024; // 16MB in bytes
+        const maxSize = 500 * 1024 * 1024; // 500MB in bytes
         if (file.size > maxSize) {
-            this.showError('File is too large. Maximum file size is 16MB.');
+            this.showError('File is too large. Maximum file size is 500MB.');
             return;
         }
 
@@ -102,11 +94,8 @@ class DocumentAnalyzer {
 
         // Clear previous file-info if exists
         const previous = uploadArea.querySelector('.file-info');
-        if (previous) {
-            previous.remove();
-        }
+        if (previous) previous.remove();
 
-        // Create file info display
         const fileInfo = document.createElement('div');
         fileInfo.className = 'file-info';
         fileInfo.innerHTML = `
@@ -115,19 +104,16 @@ class DocumentAnalyzer {
                 ${file.name}
             </div>
             <div class="file-size text-muted">
-                ${this.formatFileSize(file.size)} • ${file.type.split('/')[1].toUpperCase()}
+                ${this.formatFileSize(file.size)} • ${(file.type.split('/')[1] || '').toUpperCase()}
             </div>
             <button type="button" class="btn btn-sm btn-outline-secondary mt-2" id="changeFileBtn">
                 <i class="fas fa-edit me-1"></i>
                 Change File
             </button>
         `;
-
-        // Hide upload content and append file info
         uploadContent.style.display = 'none';
         uploadArea.appendChild(fileInfo);
 
-        // Add change file functionality
         document.getElementById('changeFileBtn').addEventListener('click', () => {
             document.getElementById('fileInput').click();
         });
@@ -152,7 +138,6 @@ class DocumentAnalyzer {
 
         try {
             this.updateLoadingStep('Uploading file');
-
             const response = await fetch('/upload', {
                 method: 'POST',
                 body: formData
@@ -165,21 +150,17 @@ class DocumentAnalyzer {
 
             this.updateLoadingStep('Extracting text');
             await new Promise(resolve => setTimeout(resolve, 1000));
-
             this.updateLoadingStep('Analyzing entities');
             await new Promise(resolve => setTimeout(resolve, 1500));
-
             this.updateLoadingStep('Generating summary');
             await new Promise(resolve => setTimeout(resolve, 1000));
 
             const result = await response.json();
-
             if (result.success) {
                 this.displayResults(result.data);
             } else {
                 throw new Error(result.error || 'Analysis failed');
             }
-
         } catch (error) {
             console.error('Analysis error:', error);
             this.showError(error.message || 'An unexpected error occurred while analyzing the document.');
@@ -205,46 +186,41 @@ class DocumentAnalyzer {
     }
 
     displayResults(data) {
-        // Populate original text
         document.getElementById('originalText').textContent = data.original_text || '';
-
-        // Populate summary
         document.getElementById('summaryText').textContent = data.summary || '';
-
-        // Display risk assessment
         this.displayRiskAssessment(data.risk_assessment || {});
-
-        // Display clause analysis
         this.displayClauseAnalysis(data.clause_analysis || []);
-
-        // Populate entities
         this.displayEntities(data.entities);
 
-        // Show PDF preview if available
-        if (data.pdf_report_url) {
-            const pdfPreviewSection = document.getElementById('pdfPreviewSection');
-            const pdfViewer = document.getElementById('pdfViewer');
-            pdfPreviewSection.classList.remove('d-none');
-            pdfViewer.src = data.pdf_report_url;
-
-            // Show download button and bind link
-            const downloadBtn = document.getElementById('downloadReportBtn');
-            downloadBtn.style.display = 'inline-block';
-            downloadBtn.onclick = () => {
-                window.open(data.pdf_report_url, '_blank');
-            };
-        }
-
-        // Show results section
-        document.getElementById('resultsSection').classList.remove('d-none');
-
-        // Scroll to results
-        document.getElementById('resultsSection').scrollIntoView({
-            behavior: 'smooth',
-            block: 'start'
+        // Direct PDF preview using /preview-pdf endpoint
+        fetch('/preview-pdf', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                extracted_text: data.original_text,
+                gemini_analysis: {
+                    summary: data.summary,
+                    clauses: data.clause_analysis,
+                    risk_assessment: data.risk_assessment
+                },
+                entities: data.entities
+            })
+        })
+        .then(res => {
+            if (!res.ok) throw new Error('PDF preview failed');
+            return res.blob();
+        })
+        .then(blob => {
+            const url = URL.createObjectURL(blob);
+            document.getElementById('pdfPreviewSection').classList.remove('d-none');
+            document.getElementById('pdfViewer').src = url;
+        })
+        .catch(error => {
+            this.showError('Failed to load preview PDF.');
         });
 
-        // Hide upload section
+        document.getElementById('resultsSection').classList.remove('d-none');
+        document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
         document.querySelector('.upload-section').style.display = 'none';
     }
 
@@ -309,10 +285,8 @@ class DocumentAnalyzer {
 
     resetInterface() {
         this.currentFile = null;
-        this.pdfReportPath = null;
         document.getElementById('fileInput').value = '';
 
-        // Reset upload area
         const uploadArea = document.getElementById('uploadArea');
         uploadArea.classList.remove('has-file', 'error');
 
@@ -322,28 +296,18 @@ class DocumentAnalyzer {
             fileInfo.remove();
         }
 
-        // Reset iframe PDF preview
         document.getElementById('pdfPreviewSection').classList.add('d-none');
         document.getElementById('pdfViewer').src = '';
 
-        // Hide download button
-        const downloadBtn = document.getElementById('downloadReportBtn');
-        downloadBtn.style.display = 'none';
-        downloadBtn.onclick = null;
-
-        // Show upload content
         document.getElementById('uploadContent').style.display = 'block';
 
-        // Disable analyze button
         const analyzeBtn = document.getElementById('analyzeBtn');
         analyzeBtn.disabled = true;
         analyzeBtn.classList.remove('pulse-animation');
 
-        // Hide results and show upload section
         document.getElementById('resultsSection').classList.add('d-none');
         document.querySelector('.upload-section').style.display = 'block';
 
-        // Scroll to top
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -356,6 +320,7 @@ class DocumentAnalyzer {
     }
 
     escapeHtml(text) {
+        if (!text) return '';
         const map = {
             '&': '&amp;',
             '<': '&lt;',
@@ -487,25 +452,6 @@ class DocumentAnalyzer {
 
         clauseElement.innerHTML = analysisHtml;
     }
-
-    downloadReport() {
-        if (!this.pdfReportPath) {
-            this.showError('No report available for download.');
-            return;
-        }
-
-        // Extract filename from path
-        const filename = this.pdfReportPath.split('/').pop();
-        const downloadUrl = `/download-report/${filename}`;
-
-        // Create temporary link to trigger download
-        const link = document.createElement('a');
-        link.href = downloadUrl;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
 }
 
 // CSS Animation for Pulse Effect
@@ -514,22 +460,15 @@ style.textContent = `
     .pulse-animation {
         animation: pulse 2s infinite;
     }
-    
     @keyframes pulse {
-        0% {
-            transform: scale(1);
-        }
-        50% {
-            transform: scale(1.05);
-        }
-        100% {
-            transform: scale(1);
-        }
+        0% { transform: scale(1);}
+        50% { transform: scale(1.05);}
+        100% { transform: scale(1);}
     }
 `;
 document.head.appendChild(style);
 
-// Initialize the application when DOM is loaded
+// Initialize app on page load
 document.addEventListener('DOMContentLoaded', () => {
     new DocumentAnalyzer();
 });
