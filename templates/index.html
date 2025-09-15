@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Understand Your Legal Documents in Seconds</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+
+</head>
+
+<body>
+    <div class="website-container">
+        <!-- Hero Section -->
+        <div class="hero-section">
+            <h1 class="main-title">Understand Your Legal Documents in Seconds</h1>
+            <p class="subtitle">Transform complex legal jargon into plain English with our AI-powered document analyzer
+            </p>
+        </div>
+
+        <!-- Main Card -->
+        <div class="main-card">
+            <div class="gear-icon">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path
+                        d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100-4m0 4v2m0-6V4" />
+                    <circle cx="12" cy="12" r="3" />
+                </svg>
+            </div>
+
+            <!-- Demo Section -->
+            <div class="demo-section">
+                <div class="demo-card">
+                    <h4>LEGAL DOCUMENT</h4>
+                    <p class="demo-text">
+                        Witkcoinq alizve, itta maie so now frini leisonl t'r atmek
+                        Yea neur tat~ vaur ber to rhow other work.
+                    </p>
+                </div>
+                <div class="arrow">→</div>
+                <div class="demo-card">
+                    <h4>SIMPLIFIED</h4>
+                    <p class="simplified-text">
+                        You'll get paid after the work is done.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Upload Section -->
+            <div id="upload-area" class="upload-section">
+                <span class="upload-icon">📄</span>
+                <div class="upload-text">Drag and drop document here</div>
+                <input type="file" id="file-input" class="file-input" accept=".pdf,.doc,.docx,.txt">
+                <button type="button" class="choose-file-btn" onclick="document.getElementById('file-input').click()">
+                    Choose File
+                </button>
+                <div id="file-name" class="file-name" ></div>
+            </div>
+
+            <button type="button" class="analyze-btn" onclick="analyzeDocument()">
+                Analyze Document
+            </button>
+
+            <!-- Trust Section -->
+            <div class="trust-section">
+                <div class="trust-badge">
+                    <span class="checkmark">✓</span>
+                    TRUSTED PARTNER
+                </div>
+
+            </div>
+
+            <!-- Testimonials -->
+            <div class="testimonials">
+                <div class="testimonial">"A real time-saver!"</div>
+                <div class="testimonial">"Makes everything simple"</div>
+            </div>
+        </div>
+
+        <!-- Features Section -->
+        <div class="features-section">
+            <div class="feature-card">
+                <span class="feature-icon">⚡</span>
+                <h3 class="feature-title">Lightning Fast</h3>
+                <p class="feature-description">Get simplified explanations of complex legal documents in seconds, not
+                    hours.</p>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon">🔒</span>
+                <h3 class="feature-title">Secure & Private</h3>
+                <p class="feature-description">Your documents are processed securely and never stored on our servers.
+                </p>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon">🎯</span>
+                <h3 class="feature-title">Highly Accurate</h3>
+                <p class="feature-description">AI-powered analysis ensures accurate and reliable document
+                    interpretation.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+</body>
+
+</html>

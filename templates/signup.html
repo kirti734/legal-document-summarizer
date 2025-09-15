@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sign Up - Legal Document Analyzer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles1.css') }}">
+    <style>
+        body {
+            background: #e9ecf4;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+
+        .center-box {
+            max-width: 400px;
+            margin: 50px auto;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 10px 32px rgba(0, 0, 0, 0.08);
+            padding: 0 0 30px 0;
+        }
+
+        .tab-header {
+            display: flex;
+            border-bottom: 2px solid #e9ecf4;
+        }
+
+        .tab-header button {
+            flex: 1;
+            background: none;
+            border: none;
+            font-size: 1.1rem;
+            font-weight: 600;
+            padding: 20px 0 15px 0;
+            color: #496aec;
+            cursor: pointer;
+            border-radius: 16px 16px 0 0;
+            transition: background 0.2s;
+        }
+
+        .tab-header button.active {
+            background: #e9ecf4;
+            color: #2250c4;
+        }
+
+        .signup-form {
+            padding: 30px 30px 0 30px;
+            display: block;
+            animation: fadein 0.3s;
+        }
+
+        .signup-form .form-group {
+            margin-bottom: 18px;
+        }
+
+        .signup-form label {
+            margin-bottom: 6px;
+            font-weight: 500;
+            font-size: 0.96rem;
+            color: #333;
+        }
+
+        .signup-form input[type="text"],
+        .signup-form input[type="email"],
+        .signup-form input[type="password"] {
+            width: 100%;
+            border: 1.5px solid #b7c4d4;
+            border-radius: 7px;
+            padding: 13px 11px;
+            font-size: 1rem;
+            margin-top: 4px;
+            box-sizing: border-box;
+        }
+
+        .signup-form input[type="text"]:focus,
+        .signup-form input[type="email"]:focus,
+        .signup-form input[type="password"]:focus {
+            border-color: #496aec;
+            outline: none;
+        }
+
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 9px;
+        }
+
+        .checkbox-row input[type="checkbox"] {
+            margin-right: 7px;
+            accent-color: #f85d5c;
+        }
+
+        .checkbox-row label {
+            font-size: 0.96rem;
+            color: #444;
+            font-weight: 400;
+        }
+
+        .checkbox-row .terms-link {
+            color: #f85d5c;
+            text-decoration: none;
+        }
+
+        .signup-btn {
+            width: 100%;
+            margin-top: 8px;
+            background: #f85d5c;
+            color: #fff;
+            font-weight: 600;
+            padding: 14px 0;
+            border-radius: 25px;
+            border: none;
+            font-size: 1.07rem;
+            cursor: pointer;
+            box-shadow: 0 8px 14px rgba(248, 93, 92, 0.07);
+        }
+
+        .signup-btn:hover {
+            background: #ee4545;
+        }
+
+        .success-message,
+        .error-message {
+            font-size: 0.98rem;
+            text-align: center;
+            margin: 10px;
+            margin-bottom: 0;
+        }
+
+        .success-message {
+            color: #28a745;
+            display: none;
+        }
+
+        .error-message {
+            color: #f85d5c;
+            display: none;
+        }
+
+        @media (max-width:520px) {
+            .center-box {
+                max-width: 100%;
+                border-radius: 0;
+            }
+
+            .signup-form {
+                padding: 22px 8px 0 8px;
+            }
+
+            .tab-header button {
+                font-size: 1rem;
+                padding: 13px 0 10px;
+            }
+        }
+
+        @keyframes fadein {
+            from {
+                opacity: 0
+            }
+
+            to {
+                opacity: 1
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="center-box">
+        <div class="tab-header">
+            <button type="button" class="active" id="tab-signup">Sign Up</button>
+        </div>
+        <form class="signup-form" id="signup-form">
+            <div id="success-message" class="success-message"></div>
+            <div id="error-message" class="error-message"></div>
+            <div class="form-group">
+                <label for="fullname">Full Name</label>
+                <input type="text" id="fullname" name="fullname" required>
+            </div>
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="text" id="phone" name="phone" pattern="^[ +0-9-]{9,18}$" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" autocomplete="username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Set Password</label>
+                <input type="password" id="password" name="password" autocomplete="new-password" required>
+            </div>
+            <div class="form-group">
+                <label for="confirm-password">Confirm Password</label>
+                <input type="password" id="confirm-password" name="confirm-password" autocomplete="new-password"
+                    required>
+            </div>
+            <div class="checkbox-row">
+                <input type="checkbox" id="terms" required>
+                <label for="terms">I have raccepted the <a href="#" class="terms-link">terms and conditions</a></label>
+            </div>
+            <button type="submit" class="signup-btn">Login Now</button>
+        </form>
+    </div>
+    <script>
+        document.getElementById('signup-form').onsubmit = async function (e) {
+            e.preventDefault();
+            let errorMsg = document.getElementById('error-message');
+            let successMsg = document.getElementById('success-message');
+            errorMsg.style.display = successMsg.style.display = 'none';
+
+            const fullname = document.getElementById('fullname').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const confirmPassword = document.getElementById('confirm-password').value.trim();
+            const termsChecked = document.getElementById('terms').checked;
+
+            if (password !== confirmPassword) {
+                errorMsg.textContent = "Passwords do not match.";
+                errorMsg.style.display = 'block';
+                return;
+            }
+            if (!termsChecked) {
+                errorMsg.textContent = "You must accept the terms and conditions.";
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch('/signup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fullname, phone, email, password, subscribeNewsletter })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    successMsg.textContent = "Account created! You can now log in.";
+                    successMsg.style.display = 'block';
+                    document.getElementById('signup-form').reset();
+                }
+                else {
+                    errorMsg.textContent = result.error || "Sign up failed.";
+                    errorMsg.style.display = 'block';
+                }
+            } catch (e) {
+                errorMsg.textContent = "Could not register. Try again later.";
+                errorMsg.style.display = 'block';
+            }
+        };
+    </script>
+</body>
+
+</html>
