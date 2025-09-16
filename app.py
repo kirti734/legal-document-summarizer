@@ -6,7 +6,7 @@ import json
 import re
 import hashlib
 
-GOOGLE_API_KEY = "AIzaSyCmRa47fFyxZ8ajizSJIJRprlqhuT7KemA"  # Replace with your actual key
+GOOGLE_API_KEY = "Gemini_API_key"  # Replace with your actual key
 
 genai.configure(api_key=GOOGLE_API_KEY)
 model = genai.GenerativeModel("gemini-2.5-flash")
@@ -397,3 +397,4 @@ app.secret_key = 'your-secret-key-here'
 
 if __name__ == '__main__':
     app.run(debug=True)
+
