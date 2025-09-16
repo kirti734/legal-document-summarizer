@@ -1,0 +1,4 @@
+Flask
+MarkupSafe
+pdfplumber
+google-generativeai
