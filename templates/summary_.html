@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8" />
+   <link
+      rel="icon"
+      type="image/webp"
+      href="{{ url_for('static', filename='logo.webp') }}"
+   />
+   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+   <title>LegalPlain — Summary</title>
+   <link rel="stylesheet" href="{{ url_for('static', filename='css/summary_style.css') }}">
+</head>
+<body>
+    <header>
+      <div class="header-content">
+        <div class="logo">
+           <img src="static/logo.webp" alt="logo">
+          <span>LegalPlain</span>
+        </div>
+      </div>
+    </header>
+    <h1>Analysis Document</h1>
+
+    <div class="document-viewer">
+        <div id="document-content" class="document-text"></div>
+    </div>
+
+    <script>
+    window.addEventListener("DOMContentLoaded", () => {
+        const summarytext = localStorage.getItem('analysisData') || '';
+        const contentDiv = document.getElementById('document-content');
+
+        if (summarytext) {
+            contentDiv.textContent = summarytext; 
+        } else {
+            contentDiv.innerHTML =
+              '<p>No document analysis data found. Please <a href="/">upload a document</a> first.</p>';
+        }
+    });
+    </script>
+</body>
+</html>
