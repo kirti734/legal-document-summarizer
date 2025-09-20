@@ -9,7 +9,6 @@
     />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>LegalPlain — SignUp</title>
-
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/signup_styles.css') }}"
@@ -87,7 +86,6 @@
         let errorMsg = document.getElementById("error-message");
         let successMsg = document.getElementById("success-message");
         errorMsg.style.display = successMsg.style.display = "none";
-
         const fullname = document.getElementById("fullname").value.trim();
         const phone = document.getElementById("phone").value.trim();
         const email = document.getElementById("email").value.trim();
