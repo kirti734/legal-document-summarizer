@@ -7,7 +7,7 @@ import difflib
 import hashlib
 import traceback
 
-GOOGLE_API_KEY = "AIzaSyCmRa47fFyxZ8ajizSJIJRprlqhuT7KemA"
+GOOGLE_API_KEY = "GEMINI_API_KEY"
 
 genai.configure(api_key=GOOGLE_API_KEY)
 model = genai.GenerativeModel("gemini-2.5-flash")
@@ -32,22 +32,17 @@ def summary_analysis():
 
 def extract_json_from_response(response_text):
     """Extract JSON array from Gemini response text - SIMPLIFIED VERSION"""
-    
-    # print(f"Raw response (first 200 chars): {response_text[:200]}...")
-    
     # STEP 1: Clean up markdown
     if '```':
         start_pos = response_text.find('```json') + 7
         end_pos = response_text.rfind('```')
         if end_pos > start_pos:
             response_text = response_text[start_pos:end_pos]
-            # print("✅ Removed markdown wrapper")
-    
+            
     # STEP 2: Simple cleanup
     response_text = response_text.strip()
     if response_text.lower().startswith('json'):
         response_text = response_text[4:].strip()
-    
     # Remove any backticks
     response_text = response_text.strip('`\n\r\t ')
     
@@ -57,58 +52,40 @@ def extract_json_from_response(response_text):
     
     if start_bracket != -1 and end_bracket != -1 and end_bracket > start_bracket:
         json_content = response_text[start_bracket:end_bracket + 1]
-        # print(f"✅ Extracted JSON array: {json_content[:100]}...")
     else:
         json_content = response_text
-    
-    # print(f"Final JSON to parse: {json_content}")
-    
+   
     # STEP 4: Parse and return
     try:
         parsed_data = json.loads(json_content)
-        # print(f"✅ Parsed successfully. Type: {type(parsed_data)}")
         
-        # 🔥 SIMPLE VALIDATION - NO COMPLEX FLATTENING
+        # SIMPLE VALIDATION - NO COMPLEX FLATTENING
         if isinstance(parsed_data, list):
-            # print(f"📋 Got list with {len(parsed_data)} items")
-            
             # Just check if we have items and they're dicts
             if parsed_data:
                 for i, item in enumerate(parsed_data):
-                    # print(f"Item {i} type: {type(item)}")
                     if not isinstance(item, dict):
-                        # print(f"❌ Item {i} is {type(item)}, not dict: {item}")
                         # If it's a list, something is wrong with our parsing
                         if isinstance(item, list):
-                            # print("🔄 Detected nested structure, trying to fix...")
                             # Just return the first valid list of dicts we find
                             for nested_item in parsed_data:
                                 if isinstance(nested_item, list) and nested_item and isinstance(nested_item, dict):
-                                    # print("✅ Found valid nested array")
-                                    return nested_item
+                                     return nested_item
                             raise ValueError("Cannot find valid dict structure")
                         else:
                             raise ValueError(f"Expected dict, got {type(item)}")
-                
-                # print("✅ All items are dictionaries")
+             
                 return parsed_data
-            
             else:
-                # print("📋 Empty list")
                 return []
         
         elif isinstance(parsed_data, dict):
-            # print("📝 Single dict, wrapping in list")
             return [parsed_data]
-        
         else:
             raise ValueError(f"Expected list or dict, got {type(parsed_data)}")
             
     except json.JSONDecodeError as e:
-        # print(f"❌ JSON parsing failed: {e}")
-        # print(f"Attempted to parse: {json_content}")
         raise ValueError(f"Invalid JSON: {e}")
-
 
 def find_best_match(original_text, clause_text):
     seq = difflib.SequenceMatcher(None, original_text, clause_text)
@@ -150,8 +127,7 @@ def upload_file():
         if file.filename == '':
             return jsonify({'success': False, 'error': 'No file selected'}), 400
         
-        filename = file.filename
-        
+        filename = file.filename 
         # Extract text from PDF
         text = ""
         try:
@@ -166,13 +142,10 @@ def upload_file():
         if not text.strip():
             return jsonify({'success': False, 'error': 'No text found in PDF'}), 400
         
-        # 🔥 FIX 1: Add debug print to see what we're working with
-        # print(f"Extracted text length: {len(text)}")
-        
+        # Add debug print to see what we're working with
         # AI prompt
         prompt = f"""
             You are an expert legal assistant. Analyze the legal document and return a valid JSON array.
-
             Each element should be a JSON object with these exact keys:
             - "documentType": string (e.g., "Rental Agreement")
             - "lawyerSpecialty": string (e.g., "Real Estate Lawyer")  
@@ -190,77 +163,59 @@ def upload_file():
             Document: {text[:1000000]}
             """
 
-        # 🔥 FIX 2: Bulletproof AI call with fallback
+        # Bulletproof AI call with fallback
         try:
-            # print("=== CALLING GEMINI API ===")
             response = model.generate_content(prompt)
             api_response_text = response.text.strip()
-            # print(f"API Response type: {type(api_response_text)}")
-            # print(f"API Response (first 100 chars): {api_response_text[:100]}")
-            
+           
             # Check if it's an error response
             if not api_response_text or api_response_text.startswith('<') or 'quota' in api_response_text.lower():
                 raise Exception(f"API returned error: {api_response_text[:200]}")
                 
         except Exception as api_error:
             pass
-            # print(f"=== API ERROR: {str(api_error)} ===")
             
-        # 🔥 FIX 3: Safe JSON parsing with detailed error handling
+        #  Safe JSON parsing with detailed error handling
         try:
             clauses_data = extract_json_from_response(api_response_text)
-            # print(f"Parsed clauses_data type: {type(clauses_data)}")
-            # print(f"Parsed clauses_data length: {len(clauses_data) if isinstance(clauses_data, list) else 'Not a list'}")
-            
-            # 🔥 CRITICAL: Ensure it's a list of dictionaries
+            # Ensure it's a list of dictionaries
             if not isinstance(clauses_data, list):
-                # print(f"ERROR: clauses_data is {type(clauses_data)}, not list")
-                # print(f"Content: {str(clauses_data)[:200]}")
                 raise ValueError(f"Expected list, got {type(clauses_data)}")
             
-            if not clauses_data:  # Empty list
+            if not clauses_data: 
                 raise ValueError("Got empty list from JSON parsing")
                 
             # Validate first element is a dictionary
             if clauses_data and not isinstance(clauses_data[0], dict):
-                # print(f"ERROR: First element is {type(clauses_data[0])}, not dict")
-                # print(f"First element content: {clauses_data[0]}")
                 raise ValueError(f"First element is {type(clauses_data[0])}, expected dict")
                 
         except Exception as parse_error:
-            # print(f"=== JSON PARSING ERROR: {str(parse_error)} ===")
-            # print(f"Raw API response: {api_response_text[:500]}")
-            
             # Return the error with raw response for debugging
             return jsonify({
                 'success': False,
                 'error': f'Failed to parse AI response. Error: {str(parse_error)}. Raw response: {api_response_text[:200]}...'
             }), 500
 
-        # 🔥 FIX 4: Safe HTML generation
+        # Safe HTML generation
         try:
             highlighted_html = generate_highlighted_html(text, clauses_data)
         except Exception as highlight_error:
-            # print(f"=== HIGHLIGHTING ERROR: {str(highlight_error)} ===")
-            highlighted_html = text  # Fallback to plain text
+            highlighted_html = text 
 
-        # 🔥 FIX 5: Safe metadata extraction (THIS WAS THE FAILING LINE)
+        # Safe metadata extraction (THIS WAS THE FAILING LINE)
         document_type = "Legal Document"
         lawyer_specialty = "Legal Professional"
         
         if clauses_data and len(clauses_data) > 0:
             first_clause = clauses_data[0]
-            # print(f"First clause type: {type(first_clause)}")
-            # print(f"First clause content: {first_clause}")
-            
-            # 🔥 SAFE ACCESS: Check if it's actually a dictionary
+           
+            # Check if it's actually a dictionary
             if isinstance(first_clause, dict):
                 document_type = first_clause.get('documentType', document_type)
                 lawyer_specialty = first_clause.get('lawyerSpecialty', lawyer_specialty)
             else:
                 pass
-                # print(f"WARNING: First clause is not a dict, it's {type(first_clause)}")
-        
+               
         return jsonify({
             'success': True,
             'data': {
@@ -276,7 +231,6 @@ def upload_file():
         })
 
     except Exception as e:
-        # print(f"=== GENERAL UPLOAD ERROR: {str(e)} ===")
        
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -401,8 +355,6 @@ def login():
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     referrer_url = request.referrer  
-    # print("Previous page URL:", referrer_url)
-
     if request.method == 'GET':
         return render_template('signup.html', referrer=referrer_url)
    
@@ -416,7 +368,6 @@ def signup():
             return jsonify({'success': False, 'error': 'All fields except newsletter are required.'}), 400
         if email in USERS:
             pass
-            # print(email)
             return jsonify({'success': False, 'error': 'Email already exists.'}), 400
         USERS[email] = {
             "password": hashlib.sha256(password.encode()).hexdigest(),
