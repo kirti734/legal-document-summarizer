@@ -30,7 +30,6 @@
     window.addEventListener("DOMContentLoaded", () => {
         const summarytext = localStorage.getItem('analysisData') || '';
         const contentDiv = document.getElementById('document-content');
-
         if (summarytext) {
             contentDiv.textContent = summarytext; 
         } else {
