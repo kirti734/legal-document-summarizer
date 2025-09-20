@@ -7,7 +7,7 @@ import difflib
 import hashlib
 import traceback
 
-GOOGLE_API_KEY = "GEMINI_API_KEY"
+GOOGLE_API_KEY = GEMINI_API_KEY
 
 genai.configure(api_key=GOOGLE_API_KEY)
 model = genai.GenerativeModel("gemini-2.5-flash")
@@ -384,4 +384,5 @@ app.secret_key = 'your-secret-key-here'
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0',debug=True)
+
 
