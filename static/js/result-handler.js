@@ -3,7 +3,7 @@ const highlightedHtml = localStorage.getItem("highlighted_html");
 const clausesData = JSON.parse(localStorage.getItem("clauses_data") || "[]");
 const documentInfo = JSON.parse(localStorage.getItem("document_info") || "{}");
 
-// 🔥 NEW: Check if user is authenticated (you can store this in localStorage or get from server)
+// Check if user is authenticated (you can store this in localStorage or get from server)
 let isUserAuthenticated = localStorage.getItem("user_authenticated") === "true";
 
 // Display the pre-highlighted document
@@ -25,22 +25,17 @@ function displayHighlightedDocument() {
   }
 }
 
-// 🔥 MODIFIED: Show login modal for non-authenticated users
+// Show login modal for non-authenticated users
 function showClausePopup(clauseIndex) {
-  // console.log(`Clause ${clauseIndex} clicked`);
-
-  // 🔥 CHECK AUTHENTICATION FIRST
+  //  CHECK AUTHENTICATION FIRST
   if (!isUserAuthenticated) {
-    // console.log("User not authenticated, showing login modal");
     showLoginModal();
     return;
   }
-
   // Original clause popup logic for authenticated users
   const clause = clausesData[clauseIndex];
 
   if (!clause) {
-    // console.error('No clause found for index:', clauseIndex);
     return;
   }
 
@@ -50,7 +45,6 @@ function showClausePopup(clauseIndex) {
   const suggestions = document.getElementById("popup-suggestions");
 
   if (!popup || !title || !explanation || !suggestions) {
-    // console.error("Popup elements not found!");
     return;
   }
 
@@ -77,7 +71,7 @@ function showClausePopup(clauseIndex) {
   popup.classList.remove("hidden");
 }
 
-// 🔥 NEW: Login Modal Functions
+// Login Modal Functions
 function showLoginModal() {
   const modal = document.getElementById("login-modal");
   modal.classList.remove("hidden");
@@ -94,7 +88,7 @@ function showSignupForm() {
   window.location.href = "/signup";
 }
 
-// 🔥 NEW: Handle Login Form Submission
+// Handle Login Form Submission
 document.addEventListener("DOMContentLoaded", function () {
   const loginForm = document.getElementById("login-form");
   if (loginForm) {
@@ -103,9 +97,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
-
-      // console.log('Attempting login...');
-
       try {
         const response = await fetch("/login", {
           method: "POST",
@@ -129,7 +120,6 @@ document.addEventListener("DOMContentLoaded", function () {
           alert("Login failed: " + result.error);
         }
       } catch (error) {
-        // console.error('Login error:', error);
         alert("Login failed. Please try again.");
       }
     });
@@ -140,17 +130,14 @@ document.addEventListener("DOMContentLoaded", function () {
 function hideClausePopup() {
   document.getElementById("clause-popup").classList.add("hidden");
 }
-
 // Make functions global for onclick handlers
 window.showClausePopup = showClausePopup;
 window.hideClausePopup = hideClausePopup;
 window.hideLoginModal = hideLoginModal;
-
 // Event listeners
 document.addEventListener("DOMContentLoaded", function () {
   // event.stopPropagation();
   displayHighlightedDocument();
-
   // Close popup event listeners
   const closeBtn = document.querySelector(".close-btn");
   if (closeBtn) {
@@ -165,7 +152,6 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
   }
-
   // Close login modal on background click
   const loginModal = document.getElementById("login-modal");
   if (loginModal) {
@@ -179,11 +165,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
 document.getElementById('summarize-btn').addEventListener('click', async() => {
   if (!isUserAuthenticated) {
-    // console.log("User not authenticated, showing login modal");
     showLoginModal();
     return;
   }
-
     // Optionally save document content/info to localStorage or pass via query params
    window.location.href = "/summary_analysis";
 });
