@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <link
+      rel="icon"
+      type="image/webp"
+      href="{{ url_for('static', filename='logo.webp') }}"
+    />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>LegalPlain — How it works</title>
+   <link rel="stylesheet" href="{{ url_for('static', filename='css/working_style.css') }}">
+</head>
+<body>
+    <header>
+      <div class="header-content">
+        <div class="logo">
+           <img src="static/logo.webp" alt="logo">
+          <span>LegalPlain</span>
+        </div>
+      </div>
+    </header>
+  <div class="container">
+    <!-- Hero -->
+    <div class="hero" role="banner" aria-label="How LegalPlain works">
+      <div class="brand">
+        <div class="logo">
+            <img src="static/logo.webp" alt="logo">
+        </div>
+        <div>
+          <div style="color:#dff3ff;font-size:13px;font-weight:700">LegalPlain</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.74)">AI-powered document clarity</div>
+        </div>
+      </div>
+
+      <h1>Unlock Clarity in Every Legal Document — in Seconds</h1>
+      <p class="lead">Upload a document, see clauses highlighted by risk/importance, click any clause for plain-language meaning & suggestions, then get a concise summary.</p>
+
+      <!-- Steps -->
+      <div class="steps" aria-hidden="false">
+        <div class="step" aria-label="Step 1: Upload">
+          <div class="ico">1</div>
+          <div class="step-title">Upload your document</div>
+          <div class="step-desc">Drag & drop a PDF or select a file. We securely process it and extract the text.</div>
+        </div>
+
+        <div class="step">
+          <div class="ico">2</div>
+          <div class="step-title">Clause highlighting</div>
+          <div class="step-desc">Key clauses are highlighted in <strong>red</strong>, <strong>yellow</strong>, and <strong>green</strong> to show severity and importance.</div>
+        </div>
+
+        <div class="step">
+          <div class="ico">3</div>
+          <div class="step-title">Click to inspect</div>
+          <div class="step-desc">Tap any highlighted clause to see plain-language meaning, suggested edits, and negotiation tips.</div>
+        </div>
+
+        <div class="step">
+          <div class="ico">4</div>
+          <div class="step-title">Get a summary</div>
+          <div class="step-desc">Press the summary button to generate a concise legal summary with issues, obligations, and recommendations.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Work area -->
+    <div class="work-area">
+      <!-- Document area -->
+      <div class="doc-card" aria-live="polite">
+        <div class="doc-header">
+          <div>
+            <div class="doc-title">Preview — Uploaded Document</div>
+            <div class="small">Sample: Contract excerpt (click highlights)</div>
+          </div>
+          <div class="small">Uploaded: <strong>contract.pdf</strong></div>
+        </div>
+
+        <div class="document" id="document">
+          <!-- Example paragraph with highlights -->
+          <p>
+            This Agreement is entered into between <strong>Horizon Ventures LLP</strong> and <strong>Sterling Legal Advisors Pvt Ltd</strong>. 
+            <span class="highlight h-red" data-type="red" tabindex="0">The Service Provider shall be liable for any loss or damage, including indirect or consequential losses</span> arising out of the services.
+            The term of the engagement will be for a period of 12 months starting from the Effective Date.
+          </p>
+
+          <p>
+            <span class="highlight h-yellow" data-type="yellow" tabindex="0">Client shall pay the Service Provider within 60 days of invoice receipt</span>. Late payments may attract interest as specified in clause 7.
+            <span class="highlight h-green" data-type="green" tabindex="0">The Service Provider will comply with all applicable data protection laws</span> and maintain reasonable security measures.
+          </p>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <aside class="side">
+        <div class="summary-card" role="region" aria-label="Summary panel">
+          <div class="summary-title">Interactive Summary</div>
+          <div class="summary-body">Click any highlighted clause in the document to see plain-language meaning and suggestions. When ready, generate a short summary.</div>
+
+          <button class="btn" id="generate-summary" aria-controls="summary-output">Generate Summary</button>
+
+          <div id="summary-output" style="margin-top:12px; display:none;">
+            <h4 style="margin:6px 0;">Summary (preview)</h4>
+            <div id="summary-text" style="font-size:13px;color:#233142;line-height:1.45;padding:8px;border-radius:8px;background:#f6fafc;border:1px solid #e6f1f8;">
+              <strong>Effective Date & Parties:</strong> Agreement effective Sept 1, 2025 between Horizon Ventures LLP (Client) and Sterling Legal Advisors Pvt Ltd (Service Provider). <br>
+              <strong>Key Issues:</strong> Broad liability clause (high risk), net-60 payment term (monitor), data protection clause present (good). <br>
+              <strong>Recommendation:</strong> Narrow liability language; consider 30-day payment or late-fee cap.
+            </div>
+          </div>
+
+          <div style="margin-top:12px;font-size:12px;color:var(--muted)">
+            <strong>Legend:</strong>
+            <div style="margin-top:6px">
+              <span style="display:inline-block;width:10px;height:10px;background:#ff4a57;border-radius:2px;margin-right:8px;vertical-align:middle;"></span> <small>High risk / problematic</small><br>
+              <span style="display:inline-block;width:10px;height:10px;background:#ffc933;border-radius:2px;margin-right:8px;vertical-align:middle;margin-top:6px;"></span> <small>Watch / negotiable</small><br>
+              <span style="display:inline-block;width:10px;height:10px;background:#22c55e;border-radius:2px;margin-right:8px;vertical-align:middle;margin-top:6px;"></span> <small>Compliant / good</small>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- Reusable popover element that will be cloned -->
+  <template id="popover-template">
+    <div class="popover" role="dialog" aria-hidden="true">
+      <div class="p-title">Plain language meaning</div>
+      <div class="p-body">Short explanation goes here.</div>
+      <div class="p-suggest"><strong>Suggestion:</strong> Suggested edit or negotiation tip.</div>
+    </div>
+  </template>
+
+  <script>
+  // Summary button behavior
+  document.getElementById('generate-summary').addEventListener('click', function(){
+    const out = document.getElementById('summary-output');
+    out.style.display = 'block';
+    // smooth scroll to the summary card on smaller screens
+    out.scrollIntoView({behavior:'smooth', block:'center'});
+  });
+</script>
+
+</body>
+</html>
