@@ -49,7 +49,6 @@ header {
 }
 
 .logo img {
-
     margin-right: 10px;
     height: 55px;
     width: 55px;
@@ -59,8 +58,7 @@ h1 {
     color: white;
     margin: 30px;
     text-align: center;
-    font-size: 45px;
-    
+    font-size: 45px;   
 }
 
 form#summary-form {
@@ -116,7 +114,6 @@ form#summary-form button:hover {
     padding-bottom: 15px;
     border-bottom: 3px solid #e9ecef;
     text-align: center;
-
 }
 
 .document-text {
