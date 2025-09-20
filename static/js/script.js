@@ -39,7 +39,6 @@ function unhighlight(e) {
 function handleDrop(e) {
   const dt = e.dataTransfer;
   const files = dt.files;
-
   if (files.length > 0) {
     fileInput.files = files;
     handleFiles();
@@ -52,12 +51,9 @@ function handleFiles() {
     const fileName = files[0].name;
     fileNameDisplay.textContent = `${fileName}`;
     fileNameDisplay.style.background = "#e8f5e8";
-
     fileNameDisplay.style.borderRadius = "8px";
-    fileNameDisplay.style.fontSize = "24px"; // example:
-
+    fileNameDisplay.style.fontSize = "24px";
     fileNameDisplay.style.color = "#28a745";
-    // fileNameDisplay.style.display = 'block';
   }
 }
 
@@ -84,8 +80,6 @@ try {
   const result1 = await response1.json();
 
   if (result1.success) {
-    alert(`Upload complete for: ${result1.data.filename}`);
-
     // Save upload analysis data
     localStorage.setItem("highlighted_html", result1.data.highlightedHtml);
     localStorage.setItem("clauses_data", JSON.stringify(result1.data.clauses));
@@ -101,7 +95,7 @@ try {
     );
   } else {
     alert(`Error: ${result1.error}`);
-    return; // stop if upload failed
+    return; 
   }
 
   // 2. Summarizer request
@@ -115,7 +109,7 @@ try {
   const result2 = await response2.json();
 
   if (result2.success) {
-    alert(`Summary complete for: ${result2.data.filename}`);
+    alert("Analysis is complete!😊");
     localStorage.setItem("analysisData", result2.data.summary);
 
   } else {
@@ -131,7 +125,6 @@ try {
 setTimeout(() => {
       window.location.href = "/result";
     }, 500);
-
 } 
 
 // Add smooth scrolling for better UX on anchor links
