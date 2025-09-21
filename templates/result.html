@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link
+      rel="icon"
+      type="image/webp"
+      href="{{ url_for('static', filename='logo.webp') }}"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LegalPlain — Analysis</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/result_style.css') }}"
+    />
+  </head>
+  <body>
+    <header>
+      <div class="header-content">
+        <div class="logo">
+           <img src="static/logo.webp" alt="logo">
+          <span>LegalPlain</span>
+        </div>
+        <nav>
+          <div>Pricing</div>
+          <div>FAQs</div>
+          <a href="/signup" style="color: white; background-color: rgb(49, 167, 49); ">Sign In</a>
+        </nav>
+      </div>
+    </header>
+    
+    <div class="container">
+      <div class="document-viewer">
+        <h2>Document Analysis</h2>
+        <div id="document-content" class="document-text">
+          <p>Loading highlighted document...</p>
+        </div>
+      </div>
+      
+      <button id="summarize-btn">Generate Summary</button>
+      <!-- Clause Analysis Popup -->
+      <div id="clause-popup" class="popup hidden">
+        <div class="popup-content">
+          <span class="close-btn">&times;</span>
+          <h3 id="popup-title">Clause Analysis</h3>
+          <p id="popup-explanation"></p>
+          <div id="popup-suggestions"></div>
+        </div>
+      </div>
+
+      
+
+
+      <!-- 🔥 NEW: Login Modal -->
+      <div id="login-modal" class="popup hidden">
+        <div class="popup-content login-modal-content">
+          <span class="close-btn" onclick="hideLoginModal()">&times;</span>
+          <h3>🔒 Premium Feature</h3>
+          <p class="premium-message">
+            To access detailed clause analysis and legal suggestions, please
+            sign up for our premium service.
+          </p>
+
+          <form id="login-form" class="login-form">
+            <div class="form-group">
+              <label for="email">Email:</label>
+              <input type="email" id="email" name="email" required />
+            </div>
+
+            <div class="form-group">
+              <label for="password">Password:</label>
+              <input type="password" id="password" name="password" required />
+            </div>
+
+            <div class="form-buttons">
+              <button type="submit" class="login-btn">Login</button>
+              <button
+                type="button"
+                class="signup-btn"
+                onclick="showSignupForm()"
+              >
+                Sign Up
+              </button>
+            </div>
+          </form>
+
+          <div class="pricing-info">
+            <p><strong>Premium Features:</strong></p>
+            <ul>
+              <li>✅ Detailed clause explanations</li>
+              <li>✅ Suggested questions for lawyers</li>
+              <li>✅ Export analysis reports</li>
+            </ul>
+            <p class="price">Only <strong>$9.99/month</strong></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+     <footer style="background:#111; color:#f8f9fa; padding:30px 40px; margin-top:90px;">
+  <div style="max-width:1200px; margin:0 auto; display:flex; flex-wrap:wrap; justify-content:space-between; gap:40px;">
+    
+    <!-- Left section -->
+    <div style="flex:1; min-width:280px;">
+      <h3 style="color:#ffffff; margin-bottom:10px;">LegalPlain</h3>
+      <p style="font-size:14px; line-height:1.6; color:#cccccc;">
+        This platform provides AI-assisted legal summaries and insights.  
+        It is for informational purposes only and does not constitute legal advice.  
+        Please consult a licensed attorney for professional guidance.
+      </p>
+    </div>
+    
+    <!-- Right section -->
+    <div style="flex:0.5; min-width:180px;">
+      <h4 style="color:#ffffff; margin-bottom:10px;">Quick Links</h4>
+      <ul style="list-style:none; padding:0; margin:0; font-size:14px; line-height:1.8;">
+        <li><a href="#" style="color:#f8f9fa; text-decoration:none;">About Us</a></li>
+        <li><a href="#" style="color:#f8f9fa; text-decoration:none;">Privacy Policy</a></li>
+        <li><a href="#" style="color:#f8f9fa; text-decoration:none;">Terms of Service</a></li>
+        <li><a href="#" style="color:#f8f9fa; text-decoration:none;">Contact</a></li>
+      </ul>
+    </div>
+  </div>
+  
+  <!-- Right section -->
+    <div style="flex:1; min-width:220px; margin-bottom:20px;">
+      <h4 style="color:#ffffff; margin-bottom:10px; ">Contact</h4>
+      <a href="mailto:shrivastavamahi126@gmail.com" style="font-size:14px; margin:5px 0; color:white;"><div>📧 shrivastavamahi126@gmail.com</div></a>
+      <a href="mailto:chahatmannat304@gmail.com" style="font-size:14px; margin:5px 0; color:white;"><div>📧 chahatmannat304@gmail.com</div></a>
+      <a href="mailto:kirtiagarwal734@gmail.com" style="font-size:14px; margin:5px 0; color:white;"><div>📧 kirtiagarwal734@gmail.com</div></a>
+      <p style="font-size:14px; margin:5px 0;">📞 Team Leader: +91 9649767265</p>
+    </div>
+  </div>
+  
+  <div style="text-align:center; margin-top:20px; font-size:13px; color:#aaaaaa;">
+    © 2025 LegalPlain. All Rights Reserved.
+  </div>
+</footer>
+
+    <script src="{{ url_for('static', filename='js/result-handler.js') }}"></script>
+  </body>
+</html>
