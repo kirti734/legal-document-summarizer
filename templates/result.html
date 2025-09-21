@@ -42,7 +42,6 @@
       </div>
 
       <button id="summarize-btn">Generate Summary</button>
-      <!-- Clause Analysis Popup -->
       <div id="clause-popup" class="popup hidden">
         <div class="popup-content">
           <span class="close-btn">&times;</span>
@@ -52,7 +51,6 @@
         </div>
       </div>
 
-      <!-- 🔥 NEW: Login Modal -->
       <div id="login-modal" class="popup hidden">
         <div class="popup-content login-modal-content">
           <span class="close-btn" onclick="hideLoginModal()">&times;</span>
@@ -116,7 +114,6 @@
           gap: 40px;
         "
       >
-        <!-- Left section -->
         <div style="flex: 1; min-width: 280px">
           <h3 style="color: #ffffff; margin-bottom: 10px">LegalPlain</h3>
           <p style="font-size: 14px; line-height: 1.6; color: #cccccc">
@@ -127,7 +124,6 @@
           </p>
         </div>
 
-        <!-- Right section -->
         <div style="flex: 0.5; min-width: 180px">
           <h4 style="color: #ffffff; margin-bottom: 10px">Quick Links</h4>
           <ul
@@ -162,7 +158,6 @@
           </ul>
         </div>
 
-        <!-- Right section -->
         <div style="flex: 1; min-width: 220px; margin-bottom: 20px">
           <h4 style="color: #ffffff; margin-bottom: 10px">Contact</h4>
           <a
@@ -201,3 +196,4 @@
     <script src="{{ url_for('static', filename='js/result-handler.js') }}"></script>
   </body>
 </html>
+
