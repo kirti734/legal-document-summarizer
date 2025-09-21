@@ -238,7 +238,7 @@ def upload_file():
 
 USERS = {
     "kirti@example.com": {
-        "password": hashlib.sha256("kirti123".encode()).hexdigest(),
+        "password": hashlib.sha256("Kirti123@".encode()).hexdigest(),
         "premium": True
     }
 }
@@ -385,6 +385,7 @@ app.secret_key = 'your-secret-key-here'
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0',debug=True)
+
 
 
 
