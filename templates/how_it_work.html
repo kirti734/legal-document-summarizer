@@ -24,7 +24,6 @@
       </div>
     </header>
     <div class="container">
-      <!-- Hero -->
       <div class="hero" role="banner" aria-label="How LegalPlain works">
         <div class="brand">
           <div class="logo">
@@ -46,8 +45,7 @@
           any clause for plain-language meaning & suggestions, then get a
           concise summary.
         </p>
-
-        <!-- Steps -->
+        
         <div class="steps" aria-hidden="false">
           <div class="step" aria-label="Step 1: Upload">
             <div class="ico">1</div>
@@ -88,9 +86,7 @@
         </div>
       </div>
 
-      <!-- Work area -->
       <div class="work-area">
-        <!-- Document area -->
         <div class="doc-card" aria-live="polite">
           <div class="doc-header">
             <div>
@@ -103,7 +99,6 @@
           </div>
 
           <div class="document" id="document">
-            <!-- Example paragraph with highlights -->
             <p>
               This Agreement is entered into between
               <strong>Horizon Ventures LLP</strong> and
@@ -129,8 +124,7 @@
             </p>
           </div>
         </div>
-
-        <!-- Sidebar -->
+        
         <aside class="side">
           <div class="summary-card" role="region" aria-label="Summary panel">
             <div class="summary-title">Interactive Summary</div>
@@ -220,7 +214,6 @@
       </div>
     </div>
 
-    <!-- Reusable popover element that will be cloned -->
     <template id="popover-template">
       <div class="popover" role="dialog" aria-hidden="true">
         <div class="p-title">Plain language meaning</div>
@@ -249,7 +242,6 @@
           gap: 40px;
         "
       >
-        <!-- Left section -->
         <div style="flex: 1; min-width: 280px">
           <h3 style="color: #ffffff; margin-bottom: 10px">LegalPlain</h3>
           <p style="font-size: 14px; line-height: 1.6; color: #cccccc">
@@ -260,7 +252,6 @@
           </p>
         </div>
 
-        <!-- Right section -->
         <div style="flex: 0.5; min-width: 180px">
           <h4 style="color: #ffffff; margin-bottom: 10px">Quick Links</h4>
           <ul
@@ -295,7 +286,6 @@
           </ul>
         </div>
 
-        <!-- Right section -->
         <div style="flex: 1; min-width: 220px; margin-bottom: 20px">
           <h4 style="color: #ffffff; margin-bottom: 10px">Contact</h4>
           <a
@@ -332,15 +322,14 @@
     </footer>
 
     <script>
-      // Summary button behavior
       document
         .getElementById("generate-summary")
         .addEventListener("click", function () {
           const out = document.getElementById("summary-output");
           out.style.display = "block";
-          // smooth scroll to the summary card on smaller screens
           out.scrollIntoView({ behavior: "smooth", block: "center" });
         });
     </script>
   </body>
 </html>
+
