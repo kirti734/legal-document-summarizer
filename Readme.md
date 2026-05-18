@@ -1,99 +1,76 @@
-AI-Powered Legal Document Simplification Prototype
-📌 Overview
+# LegalPlain — AI-Powered Legal Document Simplifier
 
-This prototype represents an innovative AI-powered solution that simplifies complex legal documents into clear, accessible, and actionable guidance.
+> Simplifies complex legal documents into plain language with risk highlighting and concise summaries.
+> **Live at:** [legalplain.onrender.com](https://legalplain.onrender.com)
 
-👉 The prototype is live! Try it here: https://legalplain.onrender.com
+---
 
-Legal texts such as contracts, agreements, policies, and compliance notices are often written in dense, jargon-filled language, making them hard to understand for non-experts. Misinterpretation of even a single clause can lead to financial loss, compliance issues, or legal disputes.
+## What it does
 
-Our solution addresses this challenge by leveraging advanced Natural Language Processing (NLP) techniques to break down complicated clauses into plain everyday language, generate concise summaries, and provide a color-coded risk highlighting system.
+Legal texts — contracts, NDAs, policies, compliance notices — are dense and hard to understand for non-experts. Misreading even one clause can lead to financial loss or legal disputes.
 
-Unlike many existing solutions, this system follows a privacy-first design: user documents are processed temporarily for analysis and then discarded, ensuring no sensitive data is stored.
+LegalPlain solves this by:
+- Converting legal jargon into clear, plain-English explanations
+- Generating structured summaries of obligations, deadlines, and risks
+- Highlighting clauses with a colour-coded risk system (Red / Yellow / Green)
+- Processing documents with a **privacy-first approach** — no files are stored after analysis
 
-✨ Key Features
+---
 
-Plain Language Simplification
-Converts dense, legal jargon into clear and simple explanations.
+## Tech Stack
 
-Concise Summaries
-Generates structured summaries highlighting obligations, deadlines, risks, and opportunities.
+| Layer | Technology |
+|---|---|
+| Backend | Python, Flask |
+| Frontend | HTML, CSS, JavaScript |
+| NLP / AI | Natural Language Processing (clause analysis, summarisation) |
+| Deployment | Render |
+| Security | Zero document retention, encrypted login data |
 
-Risk Highlighting
-Uses a color-coded clause-highlighting system:
+---
 
-🔴 Red → High-risk clauses
+## Key Features
 
-🟡 Yellow → Moderate risk clauses
+- **Plain Language Simplification** — breaks down legal jargon into everyday language
+- **Risk Highlighting**
+  - 🔴 Red → High-risk clauses
+  - 🟡 Yellow → Moderate risk
+  - 🟢 Green → Favourable or safe terms
+- **Concise Summaries** — structured output covering obligations, deadlines, and opportunities
+- **PDF Upload Support** — results available within minutes of upload
+- **Privacy by Design** — documents discarded after processing; only login data retained securely
 
-🟢 Green → Favorable or safe terms
+---
 
-Privacy by Design
+## Target Users
 
-No documents are stored after processing
+- **Individuals** — leases, employment offers, service contracts
+- **Startups & SMEs** — vendor contracts, NDAs, compliance documents
+- **NGOs & Enterprises** — large-scale contract review with confidentiality
 
-Only minimal login information is securely saved for account access
+---
 
-User-Friendly Interface
+## Running Locally
 
-Simple upload of documents (PDF supported for now)
+```bash
+git clone https://github.com/kirti734/legaldocumentsummarizer
+cd legaldocumentsummarizer
+pip install -r requirements.txt
+python app.py
+```
 
-Summaries and highlights available within minutes
+Visit `http://localhost:5000` in your browser.
 
-💡 Unique Selling Proposition (USP)
+---
 
-Unlike existing tools that either require legal expertise or compromise confidentiality, our AI prototype delivers clarity, trust, and security in equal measure. It saves time by condensing hours of reading into minutes, reduces costs by limiting dependency on expensive legal consultations, and minimizes risks by preventing costly misinterpretations. Designed for individuals, startups, SMEs, NGOs, and enterprises alike, it bridges the gap between the technical world of law and everyday decision-making.
+## Roadmap
 
-🚀 Future Enhancements
+- [ ] Multilingual support
+- [ ] Interactive Q&A (context-aware answers about uploaded documents)
+- [ ] Industry-specific adaptations (healthcare, real estate, finance)
 
-🔐 Integration with e-signature platforms for seamless review and signing.
+---
 
-🌍 Multilingual support for diverse global audiences.
+## Live Demo
 
-🏢 Industry-specific adaptations (e.g., healthcare, real estate, finance).
-
-🤖 Interactive Q&A for AI-driven context-aware answers to user questions.
-
-🛠️ Tech Stack (Prototype)
-
-Backend: Python, Flask/FastAPI (for API services)
-
-Frontend: React.js / HTML & CSS (for user interaction)
-
-Security: Privacy-first approach with zero document retention
-
-🎯 Target Users
-
-Individuals → Understand personal agreements like leases, service contracts, or employment offers.
-
-Startups & SMEs → Quickly review vendor contracts, NDAs, and compliance documents without hiring expensive legal consultants.
-
-NGOs & Enterprises → Gain insights into obligations and risks at scale, while maintaining confidentiality.
-
-📊 Benefits
-
-Saves time → hours of reading condensed into minutes.
-
-Saves money → reduces reliance on constant legal consultations.
-
-Reduces risk → prevents costly misinterpretations.
-
-Builds trust → documents never stored, privacy ensured.
-
-🔒 Privacy Commitment
-
-We strictly adhere to Privacy by Design principles:
-
-No user documents are permanently stored.
-
-Only encrypted login data is retained.
-
-Processing is temporary and secure.
-
-Users retain full control over their legal information.
-
-📌 Vision
-
-Our vision is to become the trusted digital assistant for navigating complex legal landscapes, empowering users with clarity, confidence, and actionable insights while maintaining the highest standards of security and privacy.
-
-👉 Experience the live prototype here: https://legalplain.onrender.com
+Try it now → [legalplain.onrender.com](https://legalplain.onrender.com)
